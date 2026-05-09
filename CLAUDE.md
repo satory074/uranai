@@ -55,7 +55,11 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `@theme` の `--ease-emphasized / --ease-overshoot / --ease-anticipate / --dur-windup / --dur-flip / --dur-settle / --reveal-stagger` がチューニング窓口。
 - `.reveal-block` — `<FortuneBlock>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
 - `.reveal-child` — `FortuneResultView` 内の主要セクション (header / summary / lucky / sections / details) に乗せ、`style={{ '--reveal-i': i }}` でインデックスを渡してスタガーする (CSSProperties キャストが必要)。
-- `.card-scene` / `.card-flipper` / `.card-face` — `TarotCard` の 3D フリップ。`perspective: 1200px`、`transform-style: preserve-3d`、`backface-visibility: hidden`。フリップ自体は `linear` で、`translateZ(2.5em)` のリフトを 50% キーフレームに入れて「浮く瞬間」を作っている (David DeSandro / Auroratide パターン)。3 枚の `revealIndex` で 0/280/560ms ずらして連続フリップ。`reversed` (逆位置) は front face 内部に追加の `rotate(180deg)` を掛けて、フリップ軸とは独立に処理する。
+- `.card-scene` / `.card-flipper` / `.card-orient` — `TarotCard` の 3D フリップは **3 レイヤー × 3 アニメ** で「ためらいの揺れ → ドラマチックなめくり → 着地後に正/逆を遅れて確定」のドキドキ演出を作る:
+  - `.card-scene` (`perspective: 1400px`) に `card-wobble` (600ms) — フリップ前にカードが ±1.5°/-2px で 1 回だけ揺れる。perspective プロパティと transform プロパティは別軸なので衝突しない。
+  - `.card-flipper` (`transform-style: preserve-3d`、`backface-visibility: hidden`) に `card-flip` (940ms / `--ease-emphasized`) — `rotateY(-12deg)` でためる → ピーク 96° / `translateZ(3em)` で高くめくり上げ → 198° まで行きすぎてから 180° に戻る、5 ポイントのキーフレーム。
+  - `.card-face-front` 内側の `.card-orient` ラッパーに `orient-upright` (600ms / `--ease-emphasized`) または `orient-reversed` (700ms / `--ease-overshoot`) — フリップ着地から 200ms ホールドした後、正位置は微ジッターで 0° に落ち着き、逆位置は冒頭で −8° に逡巡してから 192° → 180° へオーバーシュートで確定する。
+  - `revealIndex` で 0/360/720ms スタガー。`reversed` は `.card-orient` の `data-reversed="true|false"` 属性で切り分け、フリップ軸と独立にアニメ化する (静的な inline rotate は廃止)。総再生時間は 3 枚で約 3.1 秒。
 - `.reveal-button` — `Home.tsx` の「結果を見る/閉じる」ボタンに付く wind-up。`:active` 中だけ scale 0.96 + 金色シマー (`shimmer-sweep` キーフレーム + `::before`) が走る。
 - `@media (prefers-reduced-motion: reduce)` で全アニメを `animation: none !important` にし、カードは `transform: rotateY(180deg)` 直結で前面静止。コンテンツは常に DOM に残るので非表示事故は起きない。
 

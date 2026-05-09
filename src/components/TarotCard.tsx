@@ -56,8 +56,8 @@ export function TarotCard({
         </div>
         <div className={`${faceClass} card-face-front`}>
           <div
-            className="absolute inset-0 flex flex-col items-center justify-between p-3"
-            style={{ transform: reversed ? 'rotate(180deg)' : undefined }}
+            className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3"
+            data-reversed={reversed ? 'true' : 'false'}
           >
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <svg viewBox="0 0 100 100" className="w-full h-full">
