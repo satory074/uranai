@@ -28,13 +28,17 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 
 - `data.ts` / `cards.ts` / `signs.ts` / `stems.ts` / `stars.ts` — static data (types, templates, lookup tables)
 - `engine.ts` — pure function `(input) => FortuneResult` (the shared shape from `src/fortunes/types.ts`)
-- `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. Tarot fortunes also render `<TarotCard />` above the result. The seedHint passed to `drawOne`/`drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
+- `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. Tarot 1枚引きはカードを記事の上に大きく置き、タロット3枚スプレッドは `FortuneResultView` の `sectionPrefix` props を使い「1行 = 1時間軸（過去／現在／未来）」でカード左・解釈右に並べて視覚的に対応付ける。 The seedHint passed to `drawOne`/`drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
+
+結果ページ最上部の `<FortuneDigest>`（`src/components/FortuneDigest.tsx`）は、各占いの絵文字・表示名・1行サマリを持つチップを 8 個並べたダイジェスト一覧。チップは `<button>` + `scrollIntoView` で対応する `id="fortune-<id>"` のブロックへジャンプする（HashRouter と衝突するためアンカー `href="#..."` は使わない）。チップに表示する 1 行サマリと、各占い結果のヘッドラインキーワードチップは `src/components/resultDerive.ts` の `deriveOneLiner` / `deriveHeadline` で各エンジン出力から派生させる（エンジン側は変更不要）。
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
 
 To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts` (the catalog provides displayName / emoji / accent for each block header). The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
 
-`src/components/DateInput.tsx` and `src/components/NameInput.tsx` are no longer wired up — `Home.tsx` builds its combined form inline. They are kept in case a future need to reuse them as standalone forms arises.
+`src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. The files are still in the tree; do not import them by mistake when adding new UI.
+
+`src/components/Layout.tsx` のフッターには占い名を列挙したハードコード文字列 (「8種類の占いをお楽しみいただけます — おみくじ・タロット（1枚／3枚）・名前運勢診断・…」) が直書きされている。占いを増減した際は `FORTUNES` カタログだけでなくこの一文も更新する (件数 `{FORTUNES.length}` 部分は自動追従)。
 
 ### Shared utilities (`src/lib/`)
 
@@ -61,3 +65,6 @@ The project's selling point is that **all interpretive text is original** and av
 
 - **Tailwind v4** uses `@tailwindcss/vite`. There is no `tailwind.config.{js,ts}` — theme tokens live in `@theme { ... }` inside `src/index.css`. The custom palette (`--color-ink/paper/mist/plum/gold/indigo`) is referenced through generated utility classes like `bg-paper`, `text-plum`, `bg-mist`.
 - Package manager is **npm** for this project (the user's global rule prefers `uv` for Python; this repo is JS/TS, so npm applies).
+- **TS strict gotchas** (errors at `npm run build`, silent at `npm run dev`):
+  - `noUnusedLocals` / `noUnusedParameters` — unused imports/variables fail the build. Vite dev server doesn't enforce these, so always run `npm run build` before pushing.
+  - `verbatimModuleSyntax` — type-only imports must use `import type { ... }`. Mixing values and types in one `import` requires the `type` modifier per specifier.

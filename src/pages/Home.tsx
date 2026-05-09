@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { FORTUNES, type FortuneInfo } from '../fortunes/types';
+import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
+import { FortuneDigest, type DigestItem } from '../components/FortuneDigest';
+import { deriveHeadline, deriveOneLiner } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
 import { readSunSign } from '../fortunes/astrology/engine';
 import { readKyusei } from '../fortunes/kyusei/engine';
@@ -127,9 +129,39 @@ export function Home() {
   const seedHint = `${year}-${month}-${day}|${fullName}`;
   const birthDate = { year, month, day };
 
+  const omikujiResult = hasName ? drawOmikuji({ name: fullName }) : null;
   const tarotOne = drawOne({ seedHint: `${seedHint}|one` });
   const tarotThree = drawThree({ seedHint: `${seedHint}|three` });
-  const labels = ['過去', '現在', '未来'];
+  const seimeiResult = hasName ? readSeimei({ sei: trimmedSei, mei: trimmedMei }) : null;
+  const astrologyResult = readSunSign(birthDate);
+  const kyuseiResult = readKyusei(birthDate);
+  const shichuResult = readShichu(birthDate);
+  const sanmeiResult = readSanmei(birthDate);
+
+  type Entry = { id: FortuneId; result: FortuneResult };
+  const entries: Entry[] = [
+    omikujiResult ? { id: 'omikuji', result: omikujiResult } : null,
+    { id: 'tarot-one', result: tarotOne.result },
+    { id: 'tarot-three', result: tarotThree.result },
+    seimeiResult ? { id: 'seimei', result: seimeiResult } : null,
+    { id: 'astrology', result: astrologyResult },
+    { id: 'kyusei', result: kyuseiResult },
+    { id: 'shichu', result: shichuResult },
+    { id: 'sanmei', result: sanmeiResult },
+  ].filter((e): e is Entry => e !== null);
+
+  const digestItems: DigestItem[] = entries.map(({ id, result }) => {
+    const info = FORTUNE_MAP[id];
+    return {
+      id,
+      emoji: info.emoji,
+      displayName: info.displayName,
+      oneLiner: deriveOneLiner(result, id),
+      accent: info.accent,
+    };
+  });
+
+  const headlineFor = (id: FortuneId, result: FortuneResult) => deriveHeadline(result, id);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
@@ -156,53 +188,81 @@ export function Home() {
         </p>
       )}
 
-      {hasName && (
-        <FortuneBlock info={FORTUNE_MAP['omikuji']}>
-          <FortuneResultView result={drawOmikuji({ name: fullName })} />
+      <FortuneDigest items={digestItems} />
+
+      {omikujiResult && (
+        <FortuneBlock id="fortune-omikuji" info={FORTUNE_MAP['omikuji']}>
+          <FortuneResultView
+            id="result-omikuji"
+            result={omikujiResult}
+            headline={headlineFor('omikuji', omikujiResult)}
+          />
         </FortuneBlock>
       )}
 
-      <FortuneBlock info={FORTUNE_MAP['tarot-one']}>
-        <div className="bg-white/80 rounded-2xl border border-amber-900/10 p-6 shadow-sm flex justify-center mb-2">
+      <FortuneBlock id="fortune-tarot-one" info={FORTUNE_MAP['tarot-one']}>
+        <div className="flex justify-center mb-2">
           <TarotCard card={tarotOne.drawn.card} reversed={tarotOne.drawn.reversed} size="lg" />
         </div>
-        <FortuneResultView result={tarotOne.result} />
+        <FortuneResultView
+          id="result-tarot-one"
+          result={tarotOne.result}
+          headline={headlineFor('tarot-one', tarotOne.result)}
+        />
       </FortuneBlock>
 
-      <FortuneBlock info={FORTUNE_MAP['tarot-three']}>
-        <div className="bg-white/80 rounded-2xl border border-amber-900/10 p-6 shadow-sm mb-2">
-          <div className="flex flex-wrap justify-center gap-4">
-            {tarotThree.drawn.map((d, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div className="text-xs text-ink/60 tracking-widest">{labels[i]}</div>
-                <TarotCard card={d.card} reversed={d.reversed} size="md" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <FortuneResultView result={tarotThree.result} />
+      <FortuneBlock id="fortune-tarot-three" info={FORTUNE_MAP['tarot-three']}>
+        <FortuneResultView
+          id="result-tarot-three"
+          result={tarotThree.result}
+          headline={headlineFor('tarot-three', tarotThree.result)}
+          sectionPrefix={(i) => {
+            const d = tarotThree.drawn[i];
+            return d ? <TarotCard card={d.card} reversed={d.reversed} size="sm" /> : null;
+          }}
+        />
       </FortuneBlock>
 
-      {hasName && (
-        <FortuneBlock info={FORTUNE_MAP['seimei']}>
-          <FortuneResultView result={readSeimei({ sei: trimmedSei, mei: trimmedMei })} />
+      {seimeiResult && (
+        <FortuneBlock id="fortune-seimei" info={FORTUNE_MAP['seimei']}>
+          <FortuneResultView
+            id="result-seimei"
+            result={seimeiResult}
+            headline={headlineFor('seimei', seimeiResult)}
+          />
         </FortuneBlock>
       )}
 
-      <FortuneBlock info={FORTUNE_MAP['astrology']}>
-        <FortuneResultView result={readSunSign(birthDate)} />
+      <FortuneBlock id="fortune-astrology" info={FORTUNE_MAP['astrology']}>
+        <FortuneResultView
+          id="result-astrology"
+          result={astrologyResult}
+          headline={headlineFor('astrology', astrologyResult)}
+        />
       </FortuneBlock>
 
-      <FortuneBlock info={FORTUNE_MAP['kyusei']}>
-        <FortuneResultView result={readKyusei(birthDate)} />
+      <FortuneBlock id="fortune-kyusei" info={FORTUNE_MAP['kyusei']}>
+        <FortuneResultView
+          id="result-kyusei"
+          result={kyuseiResult}
+          headline={headlineFor('kyusei', kyuseiResult)}
+        />
       </FortuneBlock>
 
-      <FortuneBlock info={FORTUNE_MAP['shichu']}>
-        <FortuneResultView result={readShichu(birthDate)} />
+      <FortuneBlock id="fortune-shichu" info={FORTUNE_MAP['shichu']}>
+        <FortuneResultView
+          id="result-shichu"
+          result={shichuResult}
+          headline={headlineFor('shichu', shichuResult)}
+        />
       </FortuneBlock>
 
-      <FortuneBlock info={FORTUNE_MAP['sanmei']}>
-        <FortuneResultView result={readSanmei(birthDate)} />
+      <FortuneBlock id="fortune-sanmei" info={FORTUNE_MAP['sanmei']}>
+        <FortuneResultView
+          id="result-sanmei"
+          result={sanmeiResult}
+          headline={headlineFor('sanmei', sanmeiResult)}
+        />
       </FortuneBlock>
 
       <div className="flex justify-center mt-10">
@@ -227,9 +287,17 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function FortuneBlock({ info, children }: { info: FortuneInfo; children: ReactNode }) {
+function FortuneBlock({
+  id,
+  info,
+  children,
+}: {
+  id: string;
+  info: FortuneInfo;
+  children: ReactNode;
+}) {
   return (
-    <section className="mb-10">
+    <section id={id} className="mb-10 scroll-mt-6 md:scroll-mt-56">
       <div className={`h-1.5 rounded-full bg-gradient-to-r ${info.accent} mb-4`} />
       <div className="flex items-center gap-3 mb-3">
         <span className="text-2xl" aria-hidden>{info.emoji}</span>
