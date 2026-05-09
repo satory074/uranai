@@ -23,7 +23,7 @@ export function Layout() {
       <footer className="border-t border-amber-900/10 mt-12 py-8">
         <div className="max-w-5xl mx-auto px-4 text-xs text-ink/60 leading-relaxed">
           <p className="mb-2">
-            8種類の占いをお楽しみいただけます — おみくじ・タロット（1枚／3枚）・名前運勢診断・星読み診断・九星タイプ診断・十干タイプ診断・東洋命式タイプ診断。
+            7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・名前運勢診断・星読み診断・九星タイプ診断・十干タイプ診断・東洋命式タイプ診断。
           </p>
           <p>
             本サイトの占い結果はエンターテインメントであり、結果の正確性や効果を保証するものではありません。

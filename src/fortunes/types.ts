@@ -17,7 +17,6 @@ export type FortuneResult = {
 
 export type FortuneId =
   | 'omikuji'
-  | 'tarot-one'
   | 'tarot-three'
   | 'seimei'
   | 'astrology'
@@ -42,14 +41,6 @@ export const FORTUNES: FortuneInfo[] = [
     tagline: '今日のあなたへ、ささやかな指針を一枚。',
     emoji: '🎋',
     accent: 'from-rose-200 to-amber-200',
-  },
-  {
-    id: 'tarot-one',
-    displayName: 'オリジナルタロット',
-    traditionalName: 'タロット占い・1枚引き',
-    tagline: '大アルカナから一枚を引き、今のヒントを得る。',
-    emoji: '🃏',
-    accent: 'from-violet-200 to-indigo-200',
   },
   {
     id: 'tarot-three',

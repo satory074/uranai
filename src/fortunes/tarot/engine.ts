@@ -11,35 +11,6 @@ export type DrawOptions = {
   seedHint?: string;
 };
 
-export function drawOne(opts: DrawOptions = {}): { drawn: DrawnCard; result: FortuneResult } {
-  const seed = `tarot1|${opts.seedHint ?? `${todayIsoDate()}|${Date.now()}|${Math.random()}`}`;
-  const rng = createRng(seed);
-  const card = shuffle(rng, MAJOR_ARCANA)[0];
-  const reversed = rng() < 0.5;
-  const drawn: DrawnCard = { card, reversed };
-
-  const meaning = reversed ? card.reversed : card.upright;
-
-  return {
-    drawn,
-    result: {
-      title: `${card.name} ${reversed ? '（逆位置）' : '（正位置）'}`,
-      subtitle: `1枚引き / ${card.alias}`,
-      summary: meaning.body,
-      sections: [
-        { title: 'キーワード', body: meaning.keywords.join('、') },
-        { title: 'メッセージ', body: meaning.body },
-      ],
-      meta: {
-        カード: card.name,
-        英名: card.alias,
-        位置: reversed ? '逆位置' : '正位置',
-        番号: String(card.num),
-      },
-    },
-  };
-}
-
 export function drawThree(opts: DrawOptions = {}): { drawn: DrawnCard[]; result: FortuneResult } {
   const seed = `tarot3|${opts.seedHint ?? `${todayIsoDate()}|${Date.now()}|${Math.random()}`}`;
   const rng = createRng(seed);

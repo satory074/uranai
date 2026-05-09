@@ -11,7 +11,7 @@ npm run preview  # Serve dist/ locally to validate the production bundle
 npm run lint     # ESLint flat config (eslint.config.js)
 ```
 
-There are no automated tests. Verify changes by running `npm run build`, then exercising the affected fortune via the unified Home form in the browser.
+There are no automated tests. Verify changes by running `npm run build`, then exercising each affected fortune via the unified Home form in the browser.
 
 ## Deploy pipeline
 
@@ -22,23 +22,36 @@ Pushing to `main` triggers `.github/workflows/deploy.yml` (build → `actions/up
 
 ## Architecture
 
-The entire app is a **single page**: `src/pages/Home.tsx` collects 生年月日 (必須) と 姓名 (任意) in one form, then renders results from all 8 fortunes inline. Routing is degenerate — only the `/` index route exists in `src/main.tsx`. HashRouter is kept in case a user reloads on a stale hash URL like `/#/astrology` from a pre-refactor bookmark.
+The entire app is a **single page**. `src/pages/Home.tsx` collects 生年月日 (必須) と 姓名 (任意) in one form, then renders results from all 7 fortunes inline. Routing is degenerate — only the `/` index route exists in `src/main.tsx`. HashRouter is kept in case a user reloads on a stale hash URL like `/#/astrology` from a pre-refactor bookmark.
+
+`src/pages/` contains only `Home.tsx`. Older per-fortune pages were merged into Home and removed. The README's directory tree is out of date on this point.
 
 Each fortune is a self-contained module under `src/fortunes/<id>/`:
 
 - `data.ts` / `cards.ts` / `signs.ts` / `stems.ts` / `stars.ts` — static data (types, templates, lookup tables)
 - `engine.ts` — pure function `(input) => FortuneResult` (the shared shape from `src/fortunes/types.ts`)
-- `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. Tarot 1枚引きはカードを記事の上に大きく置き、タロット3枚スプレッドは `FortuneResultView` の `sectionPrefix` props を使い「1行 = 1時間軸（過去／現在／未来）」でカード左・解釈右に並べて視覚的に対応付ける。 The seedHint passed to `drawOne`/`drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
 
-結果ページ最上部の `<FortuneDigest>`（`src/components/FortuneDigest.tsx`）は、各占いの絵文字・表示名・1行サマリを持つチップを 8 個並べたダイジェスト一覧。チップは `<button>` + `scrollIntoView` で対応する `id="fortune-<id>"` のブロックへジャンプする（HashRouter と衝突するためアンカー `href="#..."` は使わない）。チップに表示する 1 行サマリと、各占い結果のヘッドラインキーワードチップは `src/components/resultDerive.ts` の `deriveOneLiner` / `deriveHeadline` で各エンジン出力から派生させる（エンジン側は変更不要）。
+`Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
+
+The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
+
+Each `<FortuneBlock>` is **collapsed by default** with a「結果を見る」/「閉じる」button in its header. Per-block visibility is held in `expanded` state on `Home.tsx`. Clicking a `<FortuneDigest>` chip calls `reveal(id)` which both sets `expanded[id]=true` and `requestAnimationFrame`-defers a `scrollIntoView` so the section is mounted before the scroll.
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
 
 To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts` (the catalog provides displayName / emoji / accent for each block header). The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
 
-`src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. The files are still in the tree; do not import them by mistake when adding new UI.
+### Result presentation layer
 
-`src/components/Layout.tsx` のフッターには占い名を列挙したハードコード文字列 (「8種類の占いをお楽しみいただけます — おみくじ・タロット（1枚／3枚）・名前運勢診断・…」) が直書きされている。占いを増減した際は `FORTUNES` カタログだけでなくこの一文も更新する (件数 `{FORTUNES.length}` 部分は自動追従)。
+- `<FortuneDigest>` (`src/components/FortuneDigest.tsx`) sits at the top of the results page. It renders one chip per fortune (emoji + displayName + 1-line summary) and jumps to the corresponding `id="fortune-<id>"` block.
+- **Use buttons + `scrollIntoView`, not anchor `href="#fortune-..."`**: HashRouter consumes URL hashes and would unmount the page.
+- `src/components/resultDerive.ts` derives both the digest's 1-line summary (`deriveOneLiner`) and the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
+- `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
+
+### Other component caveats
+
+- `src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. Files remain in the tree; do not import them by mistake.
+- `src/components/Layout.tsx` のフッターには占い名を列挙したハードコード文字列 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・名前運勢診断・…」) が直書きされている。占いを増減した際は `FORTUNES` カタログだけでなくこの一文も更新する (件数 `{FORTUNES.length}` 部分は自動追従)。同様に `Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) もハードコードなので一緒に更新する。
 
 ### Shared utilities (`src/lib/`)
 

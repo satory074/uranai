@@ -10,7 +10,7 @@ import { readSanmei } from '../fortunes/sanmei/engine';
 import { readShichu } from '../fortunes/shichu/engine';
 import { readSeimei } from '../fortunes/seimei/engine';
 import { drawOmikuji } from '../fortunes/omikuji/engine';
-import { drawOne, drawThree } from '../fortunes/tarot/engine';
+import { drawThree } from '../fortunes/tarot/engine';
 
 const FORTUNE_MAP = Object.fromEntries(
   FORTUNES.map((f) => [f.id, f]),
@@ -24,6 +24,17 @@ export function Home() {
   const [sei, setSei] = useState('');
   const [mei, setMei] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
+
+  const toggle = (id: FortuneId) =>
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const reveal = (id: FortuneId) => {
+    setExpanded((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+    requestAnimationFrame(() => {
+      document.getElementById(`fortune-${id}`)?.scrollIntoView({ block: 'start' });
+    });
+  };
 
   if (!submitted) {
     return (
@@ -31,7 +42,7 @@ export function Home() {
         <section className="text-center mb-10">
           <p className="text-xs tracking-[0.4em] text-plum mb-3">URANAI HYAKKA</p>
           <h1 className="font-serif text-4xl md:text-5xl text-ink mb-4 leading-tight">
-            8つの占いを、<br className="md:hidden" />ひと所で。
+            7つの占いを、<br className="md:hidden" />ひと所で。
           </h1>
           <p className="text-sm md:text-base text-ink/70 max-w-xl mx-auto">
             生年月日と姓名を入力すると、おみくじから西洋占星術・命式タイプ診断・タロットまで、
@@ -130,7 +141,6 @@ export function Home() {
   const birthDate = { year, month, day };
 
   const omikujiResult = hasName ? drawOmikuji({ name: fullName }) : null;
-  const tarotOne = drawOne({ seedHint: `${seedHint}|one` });
   const tarotThree = drawThree({ seedHint: `${seedHint}|three` });
   const seimeiResult = hasName ? readSeimei({ sei: trimmedSei, mei: trimmedMei }) : null;
   const astrologyResult = readSunSign(birthDate);
@@ -141,7 +151,6 @@ export function Home() {
   type Entry = { id: FortuneId; result: FortuneResult };
   const entries: Entry[] = [
     omikujiResult ? { id: 'omikuji', result: omikujiResult } : null,
-    { id: 'tarot-one', result: tarotOne.result },
     { id: 'tarot-three', result: tarotThree.result },
     seimeiResult ? { id: 'seimei', result: seimeiResult } : null,
     { id: 'astrology', result: astrologyResult },
@@ -188,10 +197,15 @@ export function Home() {
         </p>
       )}
 
-      <FortuneDigest items={digestItems} />
+      <FortuneDigest items={digestItems} onJump={reveal} />
 
       {omikujiResult && (
-        <FortuneBlock id="fortune-omikuji" info={FORTUNE_MAP['omikuji']}>
+        <FortuneBlock
+          id="fortune-omikuji"
+          info={FORTUNE_MAP['omikuji']}
+          expanded={!!expanded['omikuji']}
+          onToggle={() => toggle('omikuji')}
+        >
           <FortuneResultView
             id="result-omikuji"
             result={omikujiResult}
@@ -200,18 +214,12 @@ export function Home() {
         </FortuneBlock>
       )}
 
-      <FortuneBlock id="fortune-tarot-one" info={FORTUNE_MAP['tarot-one']}>
-        <div className="flex justify-center mb-2">
-          <TarotCard card={tarotOne.drawn.card} reversed={tarotOne.drawn.reversed} size="lg" />
-        </div>
-        <FortuneResultView
-          id="result-tarot-one"
-          result={tarotOne.result}
-          headline={headlineFor('tarot-one', tarotOne.result)}
-        />
-      </FortuneBlock>
-
-      <FortuneBlock id="fortune-tarot-three" info={FORTUNE_MAP['tarot-three']}>
+      <FortuneBlock
+        id="fortune-tarot-three"
+        info={FORTUNE_MAP['tarot-three']}
+        expanded={!!expanded['tarot-three']}
+        onToggle={() => toggle('tarot-three')}
+      >
         <FortuneResultView
           id="result-tarot-three"
           result={tarotThree.result}
@@ -224,7 +232,12 @@ export function Home() {
       </FortuneBlock>
 
       {seimeiResult && (
-        <FortuneBlock id="fortune-seimei" info={FORTUNE_MAP['seimei']}>
+        <FortuneBlock
+          id="fortune-seimei"
+          info={FORTUNE_MAP['seimei']}
+          expanded={!!expanded['seimei']}
+          onToggle={() => toggle('seimei')}
+        >
           <FortuneResultView
             id="result-seimei"
             result={seimeiResult}
@@ -233,7 +246,12 @@ export function Home() {
         </FortuneBlock>
       )}
 
-      <FortuneBlock id="fortune-astrology" info={FORTUNE_MAP['astrology']}>
+      <FortuneBlock
+        id="fortune-astrology"
+        info={FORTUNE_MAP['astrology']}
+        expanded={!!expanded['astrology']}
+        onToggle={() => toggle('astrology')}
+      >
         <FortuneResultView
           id="result-astrology"
           result={astrologyResult}
@@ -241,7 +259,12 @@ export function Home() {
         />
       </FortuneBlock>
 
-      <FortuneBlock id="fortune-kyusei" info={FORTUNE_MAP['kyusei']}>
+      <FortuneBlock
+        id="fortune-kyusei"
+        info={FORTUNE_MAP['kyusei']}
+        expanded={!!expanded['kyusei']}
+        onToggle={() => toggle('kyusei')}
+      >
         <FortuneResultView
           id="result-kyusei"
           result={kyuseiResult}
@@ -249,7 +272,12 @@ export function Home() {
         />
       </FortuneBlock>
 
-      <FortuneBlock id="fortune-shichu" info={FORTUNE_MAP['shichu']}>
+      <FortuneBlock
+        id="fortune-shichu"
+        info={FORTUNE_MAP['shichu']}
+        expanded={!!expanded['shichu']}
+        onToggle={() => toggle('shichu')}
+      >
         <FortuneResultView
           id="result-shichu"
           result={shichuResult}
@@ -257,7 +285,12 @@ export function Home() {
         />
       </FortuneBlock>
 
-      <FortuneBlock id="fortune-sanmei" info={FORTUNE_MAP['sanmei']}>
+      <FortuneBlock
+        id="fortune-sanmei"
+        info={FORTUNE_MAP['sanmei']}
+        expanded={!!expanded['sanmei']}
+        onToggle={() => toggle('sanmei')}
+      >
         <FortuneResultView
           id="result-sanmei"
           result={sanmeiResult}
@@ -290,23 +323,38 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function FortuneBlock({
   id,
   info,
+  expanded,
+  onToggle,
   children,
 }: {
   id: string;
   info: FortuneInfo;
+  expanded: boolean;
+  onToggle: () => void;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="mb-10 scroll-mt-6 md:scroll-mt-56">
       <div className={`h-1.5 rounded-full bg-gradient-to-r ${info.accent} mb-4`} />
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl" aria-hidden>{info.emoji}</span>
-        <div>
-          <h2 className="font-serif text-lg text-ink leading-tight">{info.displayName}</h2>
-          <p className="text-[11px] text-ink/50 mt-0.5">{info.traditionalName}</p>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-2xl" aria-hidden>{info.emoji}</span>
+          <div className="min-w-0">
+            <h2 className="font-serif text-lg text-ink leading-tight truncate">{info.displayName}</h2>
+            <p className="text-[11px] text-ink/50 mt-0.5">{info.traditionalName}</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={`${id}-body`}
+          className="shrink-0 text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper transition cursor-pointer"
+        >
+          {expanded ? '閉じる' : '結果を見る'}
+        </button>
       </div>
-      {children}
+      {expanded && <div id={`${id}-body`}>{children}</div>}
     </section>
   );
 }

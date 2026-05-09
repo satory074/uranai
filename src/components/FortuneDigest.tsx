@@ -8,7 +8,13 @@ export type DigestItem = {
   accent: string;
 };
 
-export function FortuneDigest({ items }: { items: DigestItem[] }) {
+export function FortuneDigest({
+  items,
+  onJump,
+}: {
+  items: DigestItem[];
+  onJump?: (id: FortuneId) => void;
+}) {
   return (
     <aside
       aria-label="占い結果ダイジェスト"
@@ -24,7 +30,11 @@ export function FortuneDigest({ items }: { items: DigestItem[] }) {
             <button
               type="button"
               onClick={() => {
-                document.getElementById(`fortune-${it.id}`)?.scrollIntoView({ block: 'start' });
+                if (onJump) {
+                  onJump(it.id);
+                } else {
+                  document.getElementById(`fortune-${it.id}`)?.scrollIntoView({ block: 'start' });
+                }
               }}
               className="flex w-full h-full text-left rounded-lg overflow-hidden bg-mist/40 hover:bg-mist transition border border-amber-900/10 cursor-pointer"
             >

@@ -1,7 +1,7 @@
 import type { FortuneResult, FortuneId } from '../fortunes/types';
 
 export function deriveHeadline(r: FortuneResult, id: FortuneId): string[] {
-  if (id === 'tarot-one' || id === 'tarot-three') {
+  if (id === 'tarot-three') {
     const kw = r.sections[0]?.body.split('\n\n')[0] ?? '';
     const chips = kw.split('、').map((s) => s.trim()).filter(Boolean);
     if (chips.length > 0) return chips.slice(0, 4);
@@ -13,7 +13,6 @@ export function deriveHeadline(r: FortuneResult, id: FortuneId): string[] {
 
 export function deriveOneLiner(r: FortuneResult, id: FortuneId): string {
   if (id === 'omikuji') return r.title;
-  if (id === 'tarot-one') return r.title;
   if (id === 'tarot-three') return r.subtitle ?? r.title;
   if (id === 'seimei') {
     if (typeof r.score === 'number') {
