@@ -31,7 +31,7 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 - `data.ts` / `cards.ts` / `signs.ts` / `stems.ts` / `stars.ts` — static data (types, templates, lookup tables)
 - `engine.ts` — pure function `(input) => FortuneResult` (the shared shape from `src/fortunes/types.ts`)
 
-`Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
+`Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation. `Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` をカードの `position` prop で渡すと、カード前面左上に位置バッジが (回転と独立に) 描画される。カード前面下部のキーワード行は `card.upright.keywords` / `card.reversed.keywords` を `reversed` で切り替えて `・` 区切り表示するので、カード単体でその位置・カード・方向の意味が掴める。
 
 The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
 

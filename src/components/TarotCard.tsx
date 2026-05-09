@@ -14,12 +14,14 @@ export function TarotCard({
   size = 'md',
   revealIndex = 0,
   flipped = true,
+  position,
 }: {
   card: Card;
   reversed?: boolean;
   size?: 'sm' | 'md' | 'lg';
   revealIndex?: number;
   flipped?: boolean;
+  position?: string;
 }) {
   const dims =
     size === 'sm' ? 'w-24 h-40' : size === 'lg' ? 'w-48 h-72' : 'w-32 h-52';
@@ -27,12 +29,13 @@ export function TarotCard({
   const sceneStyle = { ['--reveal-i']: revealIndex } as CSSProperties;
   const faceClass =
     'card-face rounded-xl border-2 border-amber-700/30 bg-gradient-to-b from-indigo-900 to-violet-950 text-amber-200 shadow-md flex flex-col items-center justify-between p-3 overflow-hidden';
+  const keywords = (reversed ? card.reversed.keywords : card.upright.keywords).join('・');
 
   return (
     <div
       className={`card-scene ${dims} relative`}
       style={sceneStyle}
-      aria-label={`${card.name}${reversed ? '逆位置' : '正位置'}`}
+      aria-label={`${position ? position + ' — ' : ''}${card.name} ${reversed ? '逆位置' : '正位置'}`}
       role="img"
     >
       <div className="card-flipper" data-flipped={flipped ? 'true' : 'false'}>
@@ -55,6 +58,11 @@ export function TarotCard({
           <div className="text-[8px] tracking-[0.4em] font-serif opacity-70">HYAKKA</div>
         </div>
         <div className={`${faceClass} card-face-front`}>
+          {position && (
+            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-amber-200/15 text-amber-200/85 text-[8px] tracking-[0.2em] font-serif z-10 pointer-events-none">
+              {position}
+            </div>
+          )}
           <div
             className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3"
             data-reversed={reversed ? 'true' : 'false'}
@@ -70,6 +78,7 @@ export function TarotCard({
             <div className="text-center">
               <div className="font-serif text-sm leading-tight">{card.name}</div>
               <div className="text-[8px] tracking-widest text-amber-200/60 mt-0.5">{card.alias.toUpperCase()}</div>
+              <div className="text-[8px] tracking-wider text-amber-200/70 mt-1 leading-tight">{keywords}</div>
             </div>
           </div>
         </div>

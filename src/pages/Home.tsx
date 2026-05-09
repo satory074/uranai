@@ -16,6 +16,8 @@ const FORTUNE_MAP = Object.fromEntries(
   FORTUNES.map((f) => [f.id, f]),
 ) as Record<FortuneInfo['id'], FortuneInfo>;
 
+const TAROT_POSITIONS = ['過去', '現在', '未来'] as const;
+
 export function Home() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear() - 30);
@@ -226,7 +228,15 @@ export function Home() {
           headline={headlineFor('tarot-three', tarotThree.result)}
           sectionPrefix={(i) => {
             const d = tarotThree.drawn[i];
-            return d ? <TarotCard card={d.card} reversed={d.reversed} size="sm" revealIndex={i} /> : null;
+            return d ? (
+              <TarotCard
+                card={d.card}
+                reversed={d.reversed}
+                size="sm"
+                revealIndex={i}
+                position={TAROT_POSITIONS[i]}
+              />
+            ) : null;
           }}
         />
       </FortuneBlock>
