@@ -226,7 +226,7 @@ export function Home() {
           headline={headlineFor('tarot-three', tarotThree.result)}
           sectionPrefix={(i) => {
             const d = tarotThree.drawn[i];
-            return d ? <TarotCard card={d.card} reversed={d.reversed} size="sm" /> : null;
+            return d ? <TarotCard card={d.card} reversed={d.reversed} size="sm" revealIndex={i} /> : null;
           }}
         />
       </FortuneBlock>
@@ -349,12 +349,16 @@ function FortuneBlock({
           onClick={onToggle}
           aria-expanded={expanded}
           aria-controls={`${id}-body`}
-          className="shrink-0 text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper transition cursor-pointer"
+          className="reveal-button shrink-0 text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper cursor-pointer"
         >
           {expanded ? '閉じる' : '結果を見る'}
         </button>
       </div>
-      {expanded && <div id={`${id}-body`}>{children}</div>}
+      {expanded && (
+        <div id={`${id}-body`} className="reveal-block" aria-live="polite">
+          {children}
+        </div>
+      )}
     </section>
   );
 }

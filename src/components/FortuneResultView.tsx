@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { FortuneResult } from '../fortunes/types';
 
 type Props = {
@@ -7,6 +7,9 @@ type Props = {
   headline?: string[];
   sectionPrefix?: (index: number) => ReactNode;
 };
+
+const stagger = (i: number): CSSProperties =>
+  ({ ['--reveal-i']: i } as CSSProperties);
 
 export function FortuneResultView({ result, id, headline, sectionPrefix }: Props) {
   const chips = headline?.filter(Boolean) ?? [];
@@ -17,7 +20,7 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
       id={id}
       className="bg-white/80 backdrop-blur rounded-2xl border border-amber-900/10 shadow-sm p-6 md:p-8 my-6"
     >
-      <header className="border-b border-amber-900/10 pb-4 mb-5">
+      <header className="reveal-child border-b border-amber-900/10 pb-4 mb-5" style={stagger(0)}>
         {chips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {chips.map((c) => (
@@ -52,24 +55,24 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
         )}
       </header>
 
-      <p className="text-base md:text-lg leading-relaxed text-ink mb-5">{result.summary}</p>
+      <p className="reveal-child text-base md:text-lg leading-relaxed text-ink mb-5" style={stagger(1)}>{result.summary}</p>
 
       {hasLucky && (
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div className="reveal-child mb-6 grid grid-cols-1 md:grid-cols-3 gap-2.5" style={stagger(2)}>
           {result.luckyColor && <Highlight label="ラッキーカラー" value={result.luckyColor} />}
           {result.luckyItem && <Highlight label="ラッキーアイテム" value={result.luckyItem} />}
           {result.advice && <Highlight label="今日のひとこと" value={result.advice} />}
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="reveal-child space-y-3" style={stagger(3)}>
         {result.sections.map((s, i) => (
           <SectionCard key={i} title={s.title} body={s.body} prefix={sectionPrefix?.(i)} />
         ))}
       </div>
 
       {result.meta && Object.keys(result.meta).length > 0 && (
-        <details className="mt-6 text-xs text-ink/50">
+        <details className="reveal-child mt-6 text-xs text-ink/50" style={stagger(4)}>
           <summary className="cursor-pointer hover:text-ink/70">計算データを見る</summary>
           <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
             {Object.entries(result.meta).map(([k, v]) => (

@@ -24,7 +24,7 @@ Pushing to `main` triggers `.github/workflows/deploy.yml` (build → `actions/up
 
 The entire app is a **single page**. `src/pages/Home.tsx` collects 生年月日 (必須) と 姓名 (任意) in one form, then renders results from all 7 fortunes inline. Routing is degenerate — only the `/` index route exists in `src/main.tsx`. HashRouter is kept in case a user reloads on a stale hash URL like `/#/astrology` from a pre-refactor bookmark.
 
-`src/pages/` contains only `Home.tsx`. Older per-fortune pages were merged into Home and removed. The README's directory tree is out of date on this point.
+`src/pages/` contains only `Home.tsx`. Older per-fortune pages were merged into Home and removed. **`README.md` is stale** — it still lists 8 fortunes (including the removed `tarot-one`), shows per-fortune `pages/` files, and references a non-existent `PageHero` component. Treat CLAUDE.md as the source of truth and do not sync edits back to README without rewriting it.
 
 Each fortune is a self-contained module under `src/fortunes/<id>/`:
 
@@ -48,10 +48,26 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `src/components/resultDerive.ts` derives both the digest's 1-line summary (`deriveOneLiner`) and the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
 
+### Reveal animations (`src/index.css`)
+
+「結果を見る」を押した瞬間の演出は **CSS アニメーションのみ**で実装している (motion/framer-motion は導入していない)。トークンとキーフレームは `src/index.css` に集約:
+
+- `@theme` の `--ease-emphasized / --ease-overshoot / --ease-anticipate / --dur-windup / --dur-flip / --dur-settle / --reveal-stagger` がチューニング窓口。
+- `.reveal-block` — `<FortuneBlock>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
+- `.reveal-child` — `FortuneResultView` 内の主要セクション (header / summary / lucky / sections / details) に乗せ、`style={{ '--reveal-i': i }}` でインデックスを渡してスタガーする (CSSProperties キャストが必要)。
+- `.card-scene` / `.card-flipper` / `.card-face` — `TarotCard` の 3D フリップ。`perspective: 1200px`、`transform-style: preserve-3d`、`backface-visibility: hidden`。フリップ自体は `linear` で、`translateZ(2.5em)` のリフトを 50% キーフレームに入れて「浮く瞬間」を作っている (David DeSandro / Auroratide パターン)。3 枚の `revealIndex` で 0/280/560ms ずらして連続フリップ。`reversed` (逆位置) は front face 内部に追加の `rotate(180deg)` を掛けて、フリップ軸とは独立に処理する。
+- `.reveal-button` — `Home.tsx` の「結果を見る/閉じる」ボタンに付く wind-up。`:active` 中だけ scale 0.96 + 金色シマー (`shimmer-sweep` キーフレーム + `::before`) が走る。
+- `@media (prefers-reduced-motion: reduce)` で全アニメを `animation: none !important` にし、カードは `transform: rotateY(180deg)` 直結で前面静止。コンテンツは常に DOM に残るので非表示事故は起きない。
+
+新しい占いを足す時は、追加の `reveal-child` ラベルや stagger 番号は不要 — `FortuneBlock` の `.reveal-block` が自動で全体を包むので、子要素が `FortuneResultView` 経由なら既存スタガーに自然に乗る。
+
 ### Other component caveats
 
 - `src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. Files remain in the tree; do not import them by mistake.
-- `src/components/Layout.tsx` のフッターには占い名を列挙したハードコード文字列 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・名前運勢診断・…」) が直書きされている。占いを増減した際は `FORTUNES` カタログだけでなくこの一文も更新する (件数 `{FORTUNES.length}` 部分は自動追従)。同様に `Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) もハードコードなので一緒に更新する。
+- 占いの **件数と名前** は 3 か所にハードコードされており、占いを増減した際は `FORTUNES` カタログ (`src/fortunes/types.ts`) と合わせて全て手動更新する必要がある:
+  1. `src/components/Layout.tsx` のフッター文 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・…」) — 件数 `{FORTUNES.length}` 部分のみ自動追従。
+  2. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」)。
+  3. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」)。
 
 ### Shared utilities (`src/lib/`)
 

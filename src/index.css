@@ -9,6 +9,13 @@
   --color-plum: #6c2952;
   --color-gold: #b48a3a;
   --color-indigo: #2a3960;
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-anticipate: cubic-bezier(0.36, 0, 0.66, -0.56);
+  --dur-windup: 200ms;
+  --dur-flip: 700ms;
+  --dur-settle: 320ms;
+  --reveal-stagger: 80ms;
 }
 
 html, body, #root {
@@ -22,4 +29,112 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes reveal-block {
+  0%   { opacity: 0; transform: translateY(24px) scale(0.96); }
+  55%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+@keyframes reveal-child {
+  0%   { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+@keyframes card-flip {
+  0%   { transform: rotateY(0deg)   translateZ(0); }
+  50%  { transform: rotateY(90deg)  translateZ(2.5em); }
+  100% { transform: rotateY(180deg) translateZ(0); }
+}
+
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(220%)  skewX(-20deg); opacity: 0; }
+}
+
+.reveal-block {
+  animation: reveal-block 720ms var(--ease-overshoot) both;
+  transform-origin: center top;
+}
+
+.reveal-child {
+  animation: reveal-child 480ms var(--ease-emphasized) both;
+  animation-delay: calc(var(--reveal-i, 0) * var(--reveal-stagger) + 120ms);
+}
+
+.card-scene {
+  perspective: 1200px;
+}
+
+.card-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateY(0deg);
+  will-change: transform;
+}
+
+.card-flipper[data-flipped="true"] {
+  animation: card-flip var(--dur-flip) linear both;
+  animation-delay: calc(var(--reveal-i, 0) * 280ms + 200ms);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-face-back {
+  transform: rotateY(0deg);
+}
+
+.card-face-front {
+  transform: rotateY(180deg);
+}
+
+.reveal-button {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 200ms var(--ease-emphasized), color 200ms var(--ease-emphasized), transform 120ms var(--ease-emphasized);
+}
+
+.reveal-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.reveal-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, var(--color-gold) 50%, transparent 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-120%) skewX(-20deg);
+}
+
+.reveal-button:active:not(:disabled)::before {
+  animation: shimmer-sweep 600ms var(--ease-emphasized);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-block,
+  .reveal-child,
+  .card-flipper[data-flipped="true"],
+  .reveal-button:active:not(:disabled)::before {
+    animation: none !important;
+  }
+  .reveal-button:active:not(:disabled) {
+    transform: none !important;
+  }
+  .card-flipper {
+    transform: rotateY(180deg);
+  }
 }
