@@ -31,7 +31,35 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 - `data.ts` / `cards.ts` / `signs.ts` / `stems.ts` / `stars.ts` — static data (types, templates, lookup tables)
 - `engine.ts` — pure function `(input) => FortuneResult` (the shared shape from `src/fortunes/types.ts`)
 
-`Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation. `Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` をカードの `position` prop で渡すと、カード前面左上に位置バッジが (回転と独立に) 描画される。カード前面下部のキーワード行は `card.upright.keywords` / `card.reversed.keywords` を `reversed` で切り替えて `・` 区切り表示するので、カード単体でその位置・カード・方向の意味が掴める。
+### Fortune catalog (id → 入力 → 出力構造)
+
+| id            | 入力                       | 出力の主要セクション         |
+|---------------|----------------------------|-----------------------------|
+| `omikuji`     | 姓名 (任意; 名前なしはスキップ) | 6 ランク × 5 運勢のおみくじ |
+| `tarot-three` | 生年月日 + 姓名 (シード)   | 過去 / 現在 / 未来 の 3 セクション (`drawn[]` も返す) |
+| `seimei`      | 姓 + 名 (両方必要)         | 五格 (天/人/地/外/総) + 簡易解釈 |
+| `astrology`   | 生年月日                   | 太陽星座 1 セクション       |
+| `kyusei`      | 生年月日 (立春切替)        | 本命星 1 セクション         |
+| `shichu`      | 生年月日                   | 日干タイプ 1 セクション     |
+| `sanmei`      | 生年月日 (立春切替)        | 独自10星 1 セクション       |
+
+`FortuneResult` の共通形 (`src/fortunes/types.ts`):
+
+```ts
+type FortuneResult = {
+  title: string;
+  subtitle?: string;
+  score?: number;             // 0–100、ヘッダーのバーに反映
+  summary: string;            // 1〜2 文の総評
+  sections: { title: string; body: string }[];  // body は \n\n でリード/詳細に分割される
+  luckyColor?: string;
+  luckyItem?: string;
+  advice?: string;
+  meta?: Record<string, string>;  // 「計算データを見る」<details> に表示
+};
+```
+
+`Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
 
 The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
 
@@ -47,6 +75,8 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - **Use buttons + `scrollIntoView`, not anchor `href="#fortune-..."`**: HashRouter consumes URL hashes and would unmount the page.
 - `src/components/resultDerive.ts` derives both the digest's 1-line summary (`deriveOneLiner`) and the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
+- `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
+- タロットの `<TarotCard />` は `position?: string` (過去/現在/未来 の左上バッジ) と、正/逆で切り替わる `card.upright.keywords` / `card.reversed.keywords` の `・` 連結行を前面下部に表示する。位置バッジは `.card-orient` の**外側**に置いて逆位置でも回転しないようにしてある。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
 
 ### Reveal animations (`src/index.css`)
 
@@ -55,11 +85,11 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `@theme` の `--ease-emphasized / --ease-overshoot / --ease-anticipate / --dur-windup / --dur-flip / --dur-settle / --reveal-stagger` がチューニング窓口。
 - `.reveal-block` — `<FortuneBlock>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
 - `.reveal-child` — `FortuneResultView` 内の主要セクション (header / summary / lucky / sections / details) に乗せ、`style={{ '--reveal-i': i }}` でインデックスを渡してスタガーする (CSSProperties キャストが必要)。
-- `.card-scene` / `.card-flipper` / `.card-orient` — `TarotCard` の 3D フリップは **3 レイヤー × 3 アニメ** で「ためらいの揺れ → ドラマチックなめくり → 着地後に正/逆を遅れて確定」のドキドキ演出を作る:
-  - `.card-scene` (`perspective: 1400px`) に `card-wobble` (600ms) — フリップ前にカードが ±1.5°/-2px で 1 回だけ揺れる。perspective プロパティと transform プロパティは別軸なので衝突しない。
-  - `.card-flipper` (`transform-style: preserve-3d`、`backface-visibility: hidden`) に `card-flip` (940ms / `--ease-emphasized`) — `rotateY(-12deg)` でためる → ピーク 96° / `translateZ(3em)` で高くめくり上げ → 198° まで行きすぎてから 180° に戻る、5 ポイントのキーフレーム。
-  - `.card-face-front` 内側の `.card-orient` ラッパーに `orient-upright` (600ms / `--ease-emphasized`) または `orient-reversed` (700ms / `--ease-overshoot`) — フリップ着地から 200ms ホールドした後、正位置は微ジッターで 0° に落ち着き、逆位置は冒頭で −8° に逡巡してから 192° → 180° へオーバーシュートで確定する。
-  - `revealIndex` で 0/360/720ms スタガー。`reversed` は `.card-orient` の `data-reversed="true|false"` 属性で切り分け、フリップ軸と独立にアニメ化する (静的な inline rotate は廃止)。総再生時間は 3 枚で約 3.1 秒。
+- `.card-scene` / `.card-flipper` / `.card-orient` — `TarotCard` の 3D フリップは **3 レイヤー × 3 アニメ** の入れ子で「ためらいの揺れ → ドラマチックなめくり → 着地後に正/逆を遅れて確定」を作る (詳細キーフレームは `src/index.css` を正本とする):
+  - `.card-scene` (perspective) に `card-wobble` — フリップ前のためらい揺れ。perspective プロパティと transform プロパティは別軸なので衝突しない。
+  - `.card-flipper` (preserve-3d / backface-visibility hidden) に `card-flip` — 反対側にためる → 高くめくり上げ → 行きすぎて戻るの 5 ポイント。`--ease-emphasized` でオーバーシュート。
+  - `.card-face-front` 内側の `.card-orient` に `orient-upright` / `orient-reversed` — フリップ着地後にホールドしてから、正位置は微ジッター、逆位置は逡巡 → オーバーシュートで 180° へ確定。`reversed` は `.card-orient` の `data-reversed` 属性で切り分け、フリップ軸と独立にアニメ化する (静的 inline rotate は廃止)。
+  - `revealIndex` でカード間スタガー。3 枚通しで総再生時間 ~3.1 秒。
 - `.reveal-button` — `Home.tsx` の「結果を見る/閉じる」ボタンに付く wind-up。`:active` 中だけ scale 0.96 + 金色シマー (`shimmer-sweep` キーフレーム + `::before`) が走る。
 - `@media (prefers-reduced-motion: reduce)` で全アニメを `animation: none !important` にし、カードは `transform: rotateY(180deg)` 直結で前面静止。コンテンツは常に DOM に残るので非表示事故は起きない。
 
