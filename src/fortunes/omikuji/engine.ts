@@ -4,11 +4,10 @@ import { RANKS, TEMPLATES, COLORS, ITEMS, ACTIONS } from './data';
 
 export type OmikujiInput = {
   name?: string;
-  date?: string;
 };
 
-export function drawOmikuji({ name, date }: OmikujiInput = {}): FortuneResult {
-  const today = date ?? todayIsoDate();
+export function drawOmikuji({ name }: OmikujiInput = {}): FortuneResult {
+  const today = todayIsoDate();
   const seed = `omikuji|${today}|${name ?? 'guest'}`;
   const rng = createRng(seed);
 

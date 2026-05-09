@@ -27,7 +27,6 @@ export type FortuneId =
 
 export type FortuneInfo = {
   id: FortuneId;
-  path: string;
   displayName: string;
   traditionalName: string;
   tagline: string;
@@ -38,7 +37,6 @@ export type FortuneInfo = {
 export const FORTUNES: FortuneInfo[] = [
   {
     id: 'omikuji',
-    path: '/omikuji',
     displayName: '今日のおみくじ',
     traditionalName: 'おみくじ',
     tagline: '今日のあなたへ、ささやかな指針を一枚。',
@@ -47,7 +45,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'tarot-one',
-    path: '/tarot-one',
     displayName: 'オリジナルタロット',
     traditionalName: 'タロット占い・1枚引き',
     tagline: '大アルカナから一枚を引き、今のヒントを得る。',
@@ -56,7 +53,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'tarot-three',
-    path: '/tarot-three',
     displayName: '悩み別タロット',
     traditionalName: 'タロット占い・3枚引き',
     tagline: '過去・現在・未来を3枚で読み解く。',
@@ -65,7 +61,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'seimei',
-    path: '/seimei',
     displayName: '名前運勢診断',
     traditionalName: '姓名判断・簡易版',
     tagline: '名前の画数から、印象と傾向を眺める。',
@@ -74,7 +69,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'astrology',
-    path: '/astrology',
     displayName: '星読み診断',
     traditionalName: '西洋占星術・太陽星座',
     tagline: '12星座のあなたらしさを言葉にする。',
@@ -83,7 +77,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'kyusei',
-    path: '/kyusei',
     displayName: '九星タイプ診断',
     traditionalName: '九星気学・本命星',
     tagline: '生まれ年から導く9つの本命タイプ。',
@@ -92,7 +85,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'shichu',
-    path: '/shichu',
     displayName: '十干タイプ診断',
     traditionalName: '四柱推命・日干',
     tagline: '日干から見る、あなたの素材タイプ。',
@@ -101,7 +93,6 @@ export const FORTUNES: FortuneInfo[] = [
   },
   {
     id: 'sanmei',
-    path: '/sanmei',
     displayName: '東洋命式タイプ診断',
     traditionalName: '算命学風・独自10星',
     tagline: '生年から導く独自10星のタイプ。',

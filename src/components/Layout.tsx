@@ -1,10 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, Outlet } from 'react-router';
 import { FORTUNES } from '../fortunes/types';
 
 export function Layout() {
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-amber-900/10 bg-paper/80 backdrop-blur sticky top-0 z-10">
@@ -16,14 +13,6 @@ export function Layout() {
               <div className="text-[11px] text-ink/60 tracking-wider">URANAI HYAKKA</div>
             </div>
           </Link>
-          {!isHome && (
-            <Link
-              to="/"
-              className="text-sm text-plum hover:underline"
-            >
-              ← 一覧へ戻る
-            </Link>
-          )}
         </div>
       </header>
 
