@@ -364,6 +364,9 @@ function FortuneBlock({
           {expanded ? '閉じる' : '結果を見る'}
         </button>
       </div>
+      <p className="text-xs md:text-sm text-ink/70 leading-relaxed mb-3 ml-11">
+        {info.description}
+      </p>
       {expanded && (
         <div id={`${id}-body`} className="reveal-block" aria-live="polite">
           {children}
