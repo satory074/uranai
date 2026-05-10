@@ -65,7 +65,7 @@ type FortuneResult = {
 
 The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
 
-Each `<FortuneBlock>` is **collapsed by default** with a「結果を見る」/「閉じる」button in its header. Per-block visibility is held in `expanded` state on `Home.tsx`. Clicking a `<FortuneDigest>` chip calls `reveal(id)` which both sets `expanded[id]=true` and `requestAnimationFrame`-defers a `scrollIntoView` so the section is mounted before the scroll.
+Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。Clicking a `<FortuneDigest>` chip calls `reveal(id)` which both sets `expanded[id]=true` and `requestAnimationFrame`-defers a `scrollIntoView` so the section is mounted before the scroll.
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
 
@@ -83,7 +83,22 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - **逆位置の前面 180° 回転は静的**: `reversed` の場合 `.card-orient` に `data-reversed="true"` が付き、CSS が静的に `transform: rotateZ(180deg)` を当てる (アニメ化しない方針 — 逆さまは結果状態であって演出ではない)。位置バッジ (`過去`/`現在`/`未来`) は `.card-orient` の**外側**にあるので逆位置でも回転せず常に正向きで読める。
 - **結果テキストはカード単位で gating** (`Home.tsx` の派生 `gatedTarotResult`): 未めくりセクションは `title` が `TAROT_POSITIONS[i]` だけ (例: 「過去」)、`body` が `'カードをタップして結果を見る'` のヒント文に置換。めくれたセクションだけ engine の本来の `title` (「過去 — 教皇（逆）」) + `body` (キーワード + 解釈) に切り替わる。
 - **subtitle と headline も連動して gating**: `subtitle` (3 枚並列の "教皇逆 / 力 / 運命の輪") は 3 枚すべてめくれるまで `undefined` (`<FortuneResultView>` の表示と `deriveOneLiner` 経由のダイジェストチップが連動して伏せられる)。`headline` (キーワードチップ群) は `deriveHeadline` が `sections[0].body` から取るため 1 枚目がめくれるまで `undefined` でチップ非表示。
-- **`tarotFlipped` のリセットはフォーム `onSubmit` で**: `setTarotFlipped([false, false, false])` を `setSubmitted(true)` の手前で呼ぶ。`useEffect` 内での setState は `react-hooks/set-state-in-effect` lint ルールで禁止されているため。
+- **`tarotFlipped` のリセットはフォーム `onSubmit` で**: `setTarotFlipped([false, false, false])` を `setSubmitted(true)` の手前で呼ぶ。`useEffect` 内での setState は `react-hooks/set-state-in-effect` lint ルールで禁止されているため。`aboutExpanded` のリセット (`setAboutExpanded({})`) も同じ場所で並べて呼ぶ。
+
+### About panels (占いの方法 + 要素一覧)
+
+各 `<FortuneBlock>` には「占いについて」トグルがあり、押すと `<FortuneAboutPanel id={fortuneId} />` (`src/components/FortuneAboutPanel.tsx`) が結果の上に展開される。中身は 2 セクション:
+
+1. **占いの背景** — 5 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。
+2. **ぜんぶの要素** — 占いごとに見た目が違うため、占い別カタログコンポーネントに分離 (`src/components/elementCatalogs/`):
+   - `OmikujiCatalog.tsx` — 6 ランクの表 (rank / 出現比率 / スコア帯)
+   - `TarotCatalog.tsx` — 22 枚の大アルカナを 1〜2 列グリッドで。静的 `<TarotCatalogCard>` を内包 (`<TarotCard>` は flip インタラクション前提なので再利用しない)。SVG モチーフは `src/components/tarotMotifs.ts` に切り出した `MOTIFS` map を共有
+   - `SeimeiCatalog.tsx` — 五格 (天/人/地/外/総) のローカル定数 `GOKAKU_INFO`。engine.ts には計算ロジックしかなく、説明文はカタログ側のみが持つ
+   - `AstrologyCatalog.tsx` / `KyuseiCatalog.tsx` / `ShichuCatalog.tsx` / `SanmeiCatalog.tsx` — それぞれ既存の `SIGNS` / `STARS` / `STEM_TYPES` / `SANMEI_STARS` を import し、共有の `<NarrativeCard>` (`elementCatalogs/NarrativeCard.tsx`) で 11 個の narrative フィールド + 3 つの lucky タイルを表示
+
+`FortuneAboutPanel` は `panelId` を受け取り、`<article id={panelId}>` を出すことで、ヘッダボタンの `aria-controls` 参照と一致させている (disclosure pattern)。パネル全体に `.reveal-block` を 1 回だけ適用 (中身の各カードに `.reveal-child` でスタガーはかけない — 22 枚に当てると 1.7 秒かかって破綻するため)。
+
+新しい占いを足す時は: (1) `methodInfo.ts` の `METHOD_INFO` に 5 フィールド追加、(2) `elementCatalogs/` に新カタログ作成、(3) `FortuneAboutPanel.tsx` の `CATALOG_TITLE` と `renderCatalog` switch にケース追加。
 
 ### Reveal animations (`src/index.css`)
 

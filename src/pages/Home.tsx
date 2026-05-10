@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
 import { FortuneDigest, type DigestItem } from '../components/FortuneDigest';
+import { FortuneAboutPanel } from '../components/FortuneAboutPanel';
 import { deriveHeadline, deriveOneLiner } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
 import { readSunSign } from '../fortunes/astrology/engine';
@@ -27,10 +28,13 @@ export function Home() {
   const [mei, setMei] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [expanded, setExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
+  const [aboutExpanded, setAboutExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
   const [tarotFlipped, setTarotFlipped] = useState<[boolean, boolean, boolean]>([false, false, false]);
 
   const toggle = (id: FortuneId) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleAbout = (id: FortuneId) =>
+    setAboutExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const reveal = (id: FortuneId) => {
     setExpanded((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
@@ -58,6 +62,7 @@ export function Home() {
           onSubmit={(e) => {
             e.preventDefault();
             setTarotFlipped([false, false, false]);
+            setAboutExpanded({});
             setSubmitted(true);
           }}
         >
@@ -226,6 +231,8 @@ export function Home() {
           info={FORTUNE_MAP['omikuji']}
           expanded={!!expanded['omikuji']}
           onToggle={() => toggle('omikuji')}
+          aboutExpanded={!!aboutExpanded['omikuji']}
+          onAboutToggle={() => toggleAbout('omikuji')}
         >
           <FortuneResultView
             id="result-omikuji"
@@ -240,6 +247,8 @@ export function Home() {
         info={FORTUNE_MAP['tarot-three']}
         expanded={!!expanded['tarot-three']}
         onToggle={() => toggle('tarot-three')}
+        aboutExpanded={!!aboutExpanded['tarot-three']}
+        onAboutToggle={() => toggleAbout('tarot-three')}
       >
         <FortuneResultView
           id="result-tarot-three"
@@ -268,6 +277,8 @@ export function Home() {
           info={FORTUNE_MAP['seimei']}
           expanded={!!expanded['seimei']}
           onToggle={() => toggle('seimei')}
+          aboutExpanded={!!aboutExpanded['seimei']}
+          onAboutToggle={() => toggleAbout('seimei')}
         >
           <FortuneResultView
             id="result-seimei"
@@ -282,6 +293,8 @@ export function Home() {
         info={FORTUNE_MAP['astrology']}
         expanded={!!expanded['astrology']}
         onToggle={() => toggle('astrology')}
+        aboutExpanded={!!aboutExpanded['astrology']}
+        onAboutToggle={() => toggleAbout('astrology')}
       >
         <FortuneResultView
           id="result-astrology"
@@ -295,6 +308,8 @@ export function Home() {
         info={FORTUNE_MAP['kyusei']}
         expanded={!!expanded['kyusei']}
         onToggle={() => toggle('kyusei')}
+        aboutExpanded={!!aboutExpanded['kyusei']}
+        onAboutToggle={() => toggleAbout('kyusei')}
       >
         <FortuneResultView
           id="result-kyusei"
@@ -308,6 +323,8 @@ export function Home() {
         info={FORTUNE_MAP['shichu']}
         expanded={!!expanded['shichu']}
         onToggle={() => toggle('shichu')}
+        aboutExpanded={!!aboutExpanded['shichu']}
+        onAboutToggle={() => toggleAbout('shichu')}
       >
         <FortuneResultView
           id="result-shichu"
@@ -321,6 +338,8 @@ export function Home() {
         info={FORTUNE_MAP['sanmei']}
         expanded={!!expanded['sanmei']}
         onToggle={() => toggle('sanmei')}
+        aboutExpanded={!!aboutExpanded['sanmei']}
+        onAboutToggle={() => toggleAbout('sanmei')}
       >
         <FortuneResultView
           id="result-sanmei"
@@ -356,18 +375,22 @@ function FortuneBlock({
   info,
   expanded,
   onToggle,
+  aboutExpanded,
+  onAboutToggle,
   children,
 }: {
   id: string;
   info: FortuneInfo;
   expanded: boolean;
   onToggle: () => void;
+  aboutExpanded: boolean;
+  onAboutToggle: () => void;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="mb-10 scroll-mt-6 md:scroll-mt-56">
       <div className={`h-1.5 rounded-full bg-gradient-to-r ${info.accent} mb-4`} />
-      <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-2xl" aria-hidden>{info.emoji}</span>
           <div className="min-w-0">
@@ -375,19 +398,33 @@ function FortuneBlock({
             <p className="text-[11px] text-ink/50 mt-0.5">{info.traditionalName}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          aria-controls={`${id}-body`}
-          className="reveal-button shrink-0 text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper cursor-pointer"
-        >
-          {expanded ? '閉じる' : '結果を見る'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onAboutToggle}
+            aria-expanded={aboutExpanded}
+            aria-controls={`${id}-about`}
+            className="reveal-button text-xs px-3 py-1.5 rounded-full border border-amber-900/20 text-ink/70 hover:bg-mist cursor-pointer"
+          >
+            {aboutExpanded ? '閉じる' : '占いについて'}
+          </button>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            aria-controls={`${id}-body`}
+            className="reveal-button text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper cursor-pointer"
+          >
+            {expanded ? '閉じる' : '結果を見る'}
+          </button>
+        </div>
       </div>
       <p className="text-xs md:text-sm text-ink/70 leading-relaxed mb-3 ml-11">
         {info.description}
       </p>
+      {aboutExpanded && (
+        <FortuneAboutPanel id={info.id} panelId={`${id}-about`} />
+      )}
       {expanded && (
         <div id={`${id}-body`} className="reveal-block" aria-live="polite">
           {children}
