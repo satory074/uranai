@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+For the consolidated design language (color tokens, typography, motion, voice & tone, copyright constraints, do-not list), see [`docs/TONE_AND_MANNER.md`](docs/TONE_AND_MANNER.md). When CLAUDE.md and the design doc disagree, code is the tiebreaker.
+
 ## Commands
 
 ```bash

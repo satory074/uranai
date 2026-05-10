@@ -16,6 +16,31 @@
   --dur-flip: 700ms;
   --dur-settle: 320ms;
   --reveal-stagger: 80ms;
+
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: #3a3548;
+  --color-text-muted: #5a5566;
+  --color-text-on-plum: var(--color-paper);
+
+  --color-surface-base: var(--color-paper);
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f9f1df;
+
+  --color-border-hairline: #e7dcc6;
+  --color-border-default: #d4c5a8;
+
+  --color-focus-ring: var(--color-gold);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(31 27 46 / 0.04);
+  --shadow-pop: 0 4px 8px rgb(0 0 0 / 0.06), 0 12px 28px rgb(31 27 46 / 0.10);
+}
+
+@layer base {
+  :where(button, [role="button"], input, select, textarea, a):focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
 }
 
 html, body, #root {
