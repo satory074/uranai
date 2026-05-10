@@ -29,7 +29,7 @@ export function Layout() {
             本サイトの占い結果はエンターテインメントであり、結果の正確性や効果を保証するものではありません。
             結果文・カード解釈・タイプ説明はすべてオリジナルのテンプレートです。
           </p>
-          <p className="mt-2 text-[10px] text-ink/40">© うらない百貨 / 全 {FORTUNES.length} 種類</p>
+          <p className="mt-2 text-[10px] text-ink/60">© うらない百貨 / 全 {FORTUNES.length} 種類</p>
         </div>
       </footer>
     </div>

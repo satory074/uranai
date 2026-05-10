@@ -43,7 +43,7 @@ export function TarotCard({
       disabled={flipped}
       aria-pressed={flipped}
       aria-label={ariaLabel}
-      className={`card-scene ${dims} relative appearance-none border-0 bg-transparent p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded-xl`}
+      className={`card-scene ${dims} relative appearance-none border-0 bg-transparent p-0 text-left focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded-xl`}
       style={sceneStyle}
     >
       <div className="card-flipper" data-flipped={flipped ? 'true' : 'false'}>
