@@ -2,6 +2,8 @@
 // 11 個の narrative フィールド（catchphrase / summary / general / love / work /
 // growth / shadow / luckyColor / luckyItem / advice）を縦に積んで表示する。
 
+import { ColorSwatch } from '../ColorSwatch';
+
 type Props = {
   badge?: string;        // 左肩のラベル（例: ♈ / 一白 / 甲 / 樹星）
   title: string;         // 見出し（例: 牡羊座）
@@ -53,7 +55,7 @@ export function NarrativeCard(p: Props) {
         <Field label="気をつけたい場面" body={p.shadow} />
       </dl>
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <MiniHighlight label="ラッキーカラー" value={p.luckyColor} />
+        <MiniHighlight label="ラッキーカラー" value={p.luckyColor} swatch />
         <MiniHighlight label="ラッキーアイテム" value={p.luckyItem} />
         <MiniHighlight label="ひとこと" value={p.advice} />
       </div>
@@ -70,11 +72,22 @@ function Field({ label, body }: { label: string; body: string }) {
   );
 }
 
-function MiniHighlight({ label, value }: { label: string; value: string }) {
+function MiniHighlight({
+  label,
+  value,
+  swatch,
+}: {
+  label: string;
+  value: string;
+  swatch?: boolean;
+}) {
   return (
     <div className="rounded bg-paper border border-amber-900/10 px-3 py-2">
       <div className="text-[9px] tracking-widest text-plum/70 uppercase mb-0.5">{label}</div>
-      <div className="text-xs font-medium text-ink leading-snug">{value}</div>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-ink leading-snug">
+        {swatch && <ColorSwatch name={value} size="sm" />}
+        <span>{value}</span>
+      </div>
     </div>
   );
 }

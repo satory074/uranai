@@ -51,7 +51,7 @@
 | `--color-text-muted`        | `#5a5566`           | 低トーンの脇テキスト (AA pass on paper)    |
 | `--color-text-on-plum`      | `var(--color-paper)`| plum 背景上のテキスト                       |
 | `--color-surface-base`      | `var(--color-paper)`| ページ全体のベース面                        |
-| `--color-surface-raised`    | `#ffffff`           | 主要カードの面 (FortuneResultView, Digest)  |
+| `--color-surface-raised`    | `#ffffff`           | 主要カードの面 (FortuneResultView)          |
 | `--color-surface-sunken`    | `#f9f1df`           | 内部パネルや凹んだ部分                       |
 | `--color-border-hairline`   | `#e7dcc6`           | 標準のごく薄い罫線                          |
 | `--color-border-default`    | `#d4c5a8`           | 区切りを明示したい時の通常罫線              |
@@ -73,7 +73,7 @@
 | `shichu`      | `from-lime-200 to-green-200`       | 苗                |
 | `sanmei`      | `from-fuchsia-200 to-rose-200`     | 桜紫              |
 
-これらは `<FortuneBlock>` ヘッダーの色帯 (`h-1.5 rounded-full bg-gradient-to-r ${info.accent}`) と `<FortuneDigest>` チップの左帯にしか使いません。本文や他の装飾には使わない。
+これらは `<FortuneBlock>` ヘッダーの色帯 (`h-1.5 rounded-full bg-gradient-to-r ${info.accent}`) にしか使いません。本文や他の装飾には使わない。
 
 ### ペア規則 (やってよい / よくない)
 
@@ -101,7 +101,7 @@
   - 各占いの `displayName`
   - スコア表示・"YOUR FORTUNES" などのラベル
 - `font-sans` (ゴシック) が **本文の基本**。ボタン・フォーム・解釈文すべて。
-- `tracking-[0.4em]` (大きな字間) は **短い装飾英字専用**。例: `URANAI HYAKKA`, `DIGEST`, `YOUR FORTUNES`。日本語に当てない。
+- `tracking-[0.4em]` (大きな字間) は **短い装飾英字専用**。例: `URANAI HYAKKA`, `YOUR FORTUNES`。日本語に当てない。
 
 ### 改行 (`<br />`) の扱い
 
@@ -120,7 +120,7 @@ Tailwind の標準スケール (4px ベース) に乗せる。独自値 (`mt-[13
 | セクション内 (header→body) | `gap-4` `mb-5` `mb-6`     |
 | 主要セクション間            | `mb-10`                   |
 | カード内側パディング        | `p-4` (内部) / `p-6 md:p-8` (主要) |
-| sticky digest と本文       | `scroll-mt-6 md:scroll-mt-56` (`<FortuneBlock>` に必須) |
+| ブロックジャンプ用 margin   | `scroll-mt-6` (`<FortuneBlock>` の anchor 余白) |
 
 ---
 
@@ -128,7 +128,7 @@ Tailwind の標準スケール (4px ベース) に乗せる。独自値 (`mt-[13
 
 | 形状                   | 用途                                     |
 | ---------------------- | ---------------------------------------- |
-| `rounded-2xl`          | 主要カード (FortuneResultView, Digest)   |
+| `rounded-2xl`          | 主要カード (FortuneResultView)           |
 | `rounded-lg`           | 内部パネル・SectionCard                   |
 | `rounded-xl`           | TarotCard 専用                            |
 | `rounded-full`         | チップ・pill 型ボタン・スコアバー         |

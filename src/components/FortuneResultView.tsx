@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { FortuneResult } from '../fortunes/types';
+import { ColorSwatch } from './ColorSwatch';
 
 type Props = {
   result: FortuneResult;
@@ -59,7 +60,9 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
 
       {hasLucky && (
         <div className="reveal-child mb-6 grid grid-cols-1 md:grid-cols-3 gap-2.5" style={stagger(2)}>
-          {result.luckyColor && <Highlight label="ラッキーカラー" value={result.luckyColor} />}
+          {result.luckyColor && (
+            <Highlight label="ラッキーカラー" value={result.luckyColor} swatch="md" />
+          )}
           {result.luckyItem && <Highlight label="ラッキーアイテム" value={result.luckyItem} />}
           {result.advice && <Highlight label="今日のひとこと" value={result.advice} />}
         </div>
@@ -126,11 +129,22 @@ function SectionCard({
   );
 }
 
-function Highlight({ label, value }: { label: string; value: string }): ReactNode {
+function Highlight({
+  label,
+  value,
+  swatch,
+}: {
+  label: string;
+  value: string;
+  swatch?: 'sm' | 'md';
+}): ReactNode {
   return (
     <div className="rounded-lg bg-paper border border-amber-900/15 px-4 py-3">
       <div className="text-[10px] tracking-widest text-plum/70 mb-1 uppercase">{label}</div>
-      <div className="text-sm font-medium text-ink leading-snug">{value}</div>
+      <div className="flex items-center gap-2 text-sm font-medium text-ink leading-snug">
+        {swatch && <ColorSwatch name={value} size={swatch} />}
+        <span>{value}</span>
+      </div>
     </div>
   );
 }

@@ -11,15 +11,3 @@ export function deriveHeadline(r: FortuneResult, id: FortuneId): string[] {
   return [r.title];
 }
 
-export function deriveOneLiner(r: FortuneResult, id: FortuneId): string {
-  if (id === 'omikuji') return r.title;
-  if (id === 'tarot-three') return r.subtitle ?? r.title;
-  if (id === 'seimei') {
-    if (typeof r.score === 'number') {
-      const tail = r.sections[0]?.title.split('—')[1]?.trim();
-      return tail ? `${r.score}点・${tail}` : `${r.score}点`;
-    }
-    return r.title;
-  }
-  return r.title.replace(/\s{2,}/, ' — ');
-}

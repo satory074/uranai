@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
-import { FortuneDigest, type DigestItem } from '../components/FortuneDigest';
 import { FortuneAboutPanel } from '../components/FortuneAboutPanel';
-import { deriveHeadline, deriveOneLiner } from '../components/resultDerive';
+import { deriveHeadline } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
 import { readSunSign } from '../fortunes/astrology/engine';
 import { readKyusei } from '../fortunes/kyusei/engine';
@@ -35,13 +34,6 @@ export function Home() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   const toggleAbout = (id: FortuneId) =>
     setAboutExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  const reveal = (id: FortuneId) => {
-    setExpanded((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
-    requestAnimationFrame(() => {
-      document.getElementById(`fortune-${id}`)?.scrollIntoView({ block: 'start' });
-    });
-  };
 
   if (!submitted) {
     return (
@@ -174,28 +166,6 @@ export function Home() {
       return next;
     });
 
-  type Entry = { id: FortuneId; result: FortuneResult };
-  const entries: Entry[] = [
-    omikujiResult ? { id: 'omikuji', result: omikujiResult } : null,
-    { id: 'tarot-three', result: gatedTarotResult },
-    seimeiResult ? { id: 'seimei', result: seimeiResult } : null,
-    { id: 'astrology', result: astrologyResult },
-    { id: 'kyusei', result: kyuseiResult },
-    { id: 'shichu', result: shichuResult },
-    { id: 'sanmei', result: sanmeiResult },
-  ].filter((e): e is Entry => e !== null);
-
-  const digestItems: DigestItem[] = entries.map(({ id, result }) => {
-    const info = FORTUNE_MAP[id];
-    return {
-      id,
-      emoji: info.emoji,
-      displayName: info.displayName,
-      oneLiner: deriveOneLiner(result, id),
-      accent: info.accent,
-    };
-  });
-
   const headlineFor = (id: FortuneId, result: FortuneResult) => deriveHeadline(result, id);
 
   return (
@@ -222,8 +192,6 @@ export function Home() {
           姓名を入力すると、姓名判断とおみくじも表示されます。
         </p>
       )}
-
-      <FortuneDigest items={digestItems} onJump={reveal} />
 
       {omikujiResult && (
         <FortuneBlock
@@ -388,7 +356,7 @@ function FortuneBlock({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="mb-10 scroll-mt-6 md:scroll-mt-56">
+    <section id={id} className="mb-10 scroll-mt-6">
       <div className={`h-1.5 rounded-full bg-gradient-to-r ${info.accent} mb-4`} />
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">

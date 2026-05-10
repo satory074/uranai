@@ -65,7 +65,7 @@ type FortuneResult = {
 
 The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
 
-Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。Clicking a `<FortuneDigest>` chip calls `reveal(id)` which both sets `expanded[id]=true` and `requestAnimationFrame`-defers a `scrollIntoView` so the section is mounted before the scroll.
+Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
 
@@ -73,16 +73,14 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 ### Result presentation layer
 
-- `<FortuneDigest>` (`src/components/FortuneDigest.tsx`) sits at the top of the results page. It renders one chip per fortune (emoji + displayName + 1-line summary) and jumps to the corresponding `id="fortune-<id>"` block.
-- **Use buttons + `scrollIntoView`, not anchor `href="#fortune-..."`**: HashRouter consumes URL hashes and would unmount the page.
-- `src/components/resultDerive.ts` derives both the digest's 1-line summary (`deriveOneLiner`) and the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
-- `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
+- `src/components/resultDerive.ts` derives the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
+- **ラッキーカラーには色見本を出す**: `<FortuneResultView>` の `Highlight` と `<NarrativeCard>` の `MiniHighlight` は `label === 'ラッキーカラー'` の枠だけ `<ColorSwatch name={value} />` (`src/components/ColorSwatch.tsx`) を文字の左に並べる。和色名 → hex のマップは `src/lib/japaneseColors.ts` (`JAPANESE_COLORS` + `resolveColor`)。複合色 (`'白・銀'` 等) は `・` で分割して半々のグラデーション円を描く。マップに無い名前は swatch 非表示で文字だけ残る (壊さない設計)。新しい色を data 側で増やしたら `JAPANESE_COLORS` に追記する。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
 - **タロットの `<TarotCard />` は controlled component**: 自身が `<button>` で、`flipped: boolean` + `onFlip?: () => void` を props で受け取る。`flipped` のソース・オブ・トゥルースは `Home.tsx` の `tarotFlipped: [boolean, boolean, boolean]` state。クリックで `onFlip` → Home が state 更新 → 再描画で `flipped=true` が降りてめくれる (`disabled={flipped}` で再クリック不可)。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
 - **逆位置の前面 180° 回転は静的**: `reversed` の場合 `.card-orient` に `data-reversed="true"` が付き、CSS が静的に `transform: rotateZ(180deg)` を当てる (アニメ化しない方針 — 逆さまは結果状態であって演出ではない)。位置バッジ (`過去`/`現在`/`未来`) は `.card-orient` の**外側**にあるので逆位置でも回転せず常に正向きで読める。
 - **結果テキストはカード単位で gating** (`Home.tsx` の派生 `gatedTarotResult`): 未めくりセクションは `title` が `TAROT_POSITIONS[i]` だけ (例: 「過去」)、`body` が `'カードをタップして結果を見る'` のヒント文に置換。めくれたセクションだけ engine の本来の `title` (「過去 — 教皇（逆）」) + `body` (キーワード + 解釈) に切り替わる。
-- **subtitle と headline も連動して gating**: `subtitle` (3 枚並列の "教皇逆 / 力 / 運命の輪") は 3 枚すべてめくれるまで `undefined` (`<FortuneResultView>` の表示と `deriveOneLiner` 経由のダイジェストチップが連動して伏せられる)。`headline` (キーワードチップ群) は `deriveHeadline` が `sections[0].body` から取るため 1 枚目がめくれるまで `undefined` でチップ非表示。
+- **subtitle と headline も連動して gating**: `subtitle` (3 枚並列の "教皇逆 / 力 / 運命の輪") は 3 枚すべてめくれるまで `undefined` (`<FortuneResultView>` で非表示)。`headline` (キーワードチップ群) は `deriveHeadline` が `sections[0].body` から取るため 1 枚目がめくれるまで `undefined` でチップ非表示。
 - **`tarotFlipped` のリセットはフォーム `onSubmit` で**: `setTarotFlipped([false, false, false])` を `setSubmitted(true)` の手前で呼ぶ。`useEffect` 内での setState は `react-hooks/set-state-in-effect` lint ルールで禁止されているため。`aboutExpanded` のリセット (`setAboutExpanded({})`) も同じ場所で並べて呼ぶ。
 
 ### About panels (占いの方法 + 要素一覧)
