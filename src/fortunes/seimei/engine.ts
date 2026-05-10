@@ -1,6 +1,6 @@
 import type { FortuneResult } from '../types';
 import { strokesOfText } from '../../lib/kanjiStrokes';
-import { tonalLabel } from './judge';
+import { tonalLabelFor } from './judge';
 
 export type SeimeiInput = { sei: string; mei: string };
 
@@ -70,11 +70,11 @@ export function readSeimei(input: SeimeiInput): FortuneResult {
     };
   }
 
-  const tenT = tonalLabel(calc.ten);
-  const jinT = tonalLabel(calc.jin);
-  const chiT = tonalLabel(calc.chi);
-  const gaiT = tonalLabel(calc.gai);
-  const souT = tonalLabel(calc.sou);
+  const tenT = tonalLabelFor('天', calc.ten);
+  const jinT = tonalLabelFor('人', calc.jin);
+  const chiT = tonalLabelFor('地', calc.chi);
+  const gaiT = tonalLabelFor('外', calc.gai);
+  const souT = tonalLabelFor('総', calc.sou);
 
   const score = Math.round(
     [tenT, jinT, chiT, gaiT, souT].reduce((s, t) => {
@@ -87,27 +87,27 @@ export function readSeimei(input: SeimeiInput): FortuneResult {
     title: `${fullName} さんの名前印象`,
     subtitle: '名前運勢診断（新字体・簡易判定）',
     score,
-    summary: `総合的には「${souT.label}」な印象。${souT.hint}`,
+    summary: `総合的には「${souT.label}」な印象を運ぶお名前です。`,
     sections: [
       {
         title: `天格 ${calc.ten}画 — ${tenT.label}`,
-        body: `家系から受け継いだ姓の画数。${tenT.hint}`,
+        body: tenT.hint,
       },
       {
         title: `人格 ${calc.jin}画 — ${jinT.label}`,
-        body: `性格・才能の中心となる画数。${jinT.hint}`,
+        body: jinT.hint,
       },
       {
         title: `地格 ${calc.chi}画 — ${chiT.label}`,
-        body: `若い頃の運や生活面に映る画数。${chiT.hint}`,
+        body: chiT.hint,
       },
       {
         title: `外格 ${calc.gai}画 — ${gaiT.label}`,
-        body: `対人関係や社会的印象を表す画数。${gaiT.hint}`,
+        body: gaiT.hint,
       },
       {
         title: `総格 ${calc.sou}画 — ${souT.label}`,
-        body: `人生全体の総合的な印象。${souT.hint}`,
+        body: souT.hint,
       },
     ],
     advice: '画数判定は流派によって差異があります。当サイトの結果は「ヒント」として、軽やかにご活用ください。',
