@@ -15,6 +15,7 @@ const FIELD_LABELS: { key: keyof MethodInfo; label: string }[] = [
   { key: 'howItWorks', label: '導き方' },
   { key: 'simplified', label: '本サイトで簡略化していること' },
   { key: 'ourTake', label: '本サイトでの位置づけ' },
+  { key: 'whenItChanges', label: '同じ人がもう一度占うと？' },
 ];
 
 const CATALOG_TITLE: Record<FortuneId, string> = {
