@@ -67,7 +67,7 @@ Each `<FortuneBlock>` is **collapsed by default** with a「結果を見る」/�
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
 
-To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts` (the catalog provides displayName / emoji / accent for each block header). The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
+To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts`. Every catalog entry needs `displayName` / `traditionalName` (subtitle) / `description` (1〜2 文の説明、折りたたみ時も常時表示される) / `emoji` / `accent` — all five are load-bearing in `FortuneBlock`'s header. The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
 
 ### Result presentation layer
 
@@ -75,6 +75,7 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - **Use buttons + `scrollIntoView`, not anchor `href="#fortune-..."`**: HashRouter consumes URL hashes and would unmount the page.
 - `src/components/resultDerive.ts` derives both the digest's 1-line summary (`deriveOneLiner`) and the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
+- `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
 - タロットの `<TarotCard />` は `position?: string` (過去/現在/未来 の左上バッジ) と、正/逆で切り替わる `card.upright.keywords` / `card.reversed.keywords` の `・` 連結行を前面下部に表示する。位置バッジは `.card-orient` の**外側**に置いて逆位置でも回転しないようにしてある。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
 
