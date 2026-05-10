@@ -114,6 +114,10 @@ body {
   transform-origin: 50% 50%;
 }
 
+.card-orient[data-reversed="true"] {
+  transform: rotateZ(180deg);
+}
+
 .reveal-button {
   position: relative;
   overflow: hidden;

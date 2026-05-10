@@ -77,7 +77,7 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `<FortuneBlock>` in `Home.tsx` carries `scroll-mt-6 md:scroll-mt-56` so the sticky digest does not occlude jumped-to blocks on desktop.
 - `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
-- タロットの `<TarotCard />` はそれ自身が `<button>` で、初期状態は **裏向き** (`useState(false)` の `flipped` をローカル所持)。クリックで `flipped=true` になり 1 回だけめくれる (`disabled={flipped}` で再クリック不可)。`position?: string` (過去/現在/未来 の左上バッジ) と、正/逆で切り替わる `card.upright.keywords` / `card.reversed.keywords` の `・` 連結行を前面下部に表示する。`engine.ts` は `reversed` を題 (「過去 — 教皇（逆）」) と本文に使い続けるが、**視覚的な Z 軸 180° 回転は廃止**したのでカード前面はめくった後も常に upright のまま。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
+- タロットの `<TarotCard />` はそれ自身が `<button>` で、初期状態は **裏向き** (`useState(false)` の `flipped` をローカル所持)。クリックで `flipped=true` になり 1 回だけめくれる (`disabled={flipped}` で再クリック不可)。`position?: string` (過去/現在/未来 の左上バッジ) と、正/逆で切り替わる `card.upright.keywords` / `card.reversed.keywords` の `・` 連結行を前面下部に表示する。`reversed` の場合は `.card-orient` に `data-reversed="true"` が付き、CSS が **静的に** `transform: rotateZ(180deg)` を当てて前面を 180° 回転させる (旧 `orient-reversed` キーフレームの「逡巡 → オーバーシュート」アニメは廃止、めくった後の最終状態だけが逆さま)。位置バッジは `.card-orient` の**外側**にあるので逆位置でも回転せず常に正向きで読める。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
 
 ### Reveal animations (`src/index.css`)
 
@@ -86,12 +86,12 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `@theme` の `--ease-emphasized / --ease-overshoot / --ease-anticipate / --dur-windup / --dur-flip / --dur-settle / --reveal-stagger` がチューニング窓口。
 - `.reveal-block` — `<FortuneBlock>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
 - `.reveal-child` — `FortuneResultView` 内の主要セクション (header / summary / lucky / sections / details) に乗せ、`style={{ '--reveal-i': i }}` でインデックスを渡してスタガーする (CSSProperties キャストが必要)。
-- `.card-scene` / `.card-flipper` — `TarotCard` の 3D フリップは **クリック起点の state 駆動**。マウント直後に走る自動アニメ (旧 `card-wobble` / `orient-upright` / `orient-reversed`) は撤去済み:
+- `.card-scene` / `.card-flipper` / `.card-orient` — `TarotCard` の 3D フリップは **クリック起点の state 駆動**。マウント直後に走る自動アニメ (旧 `card-wobble` / `orient-upright` / `orient-reversed`) は撤去済み:
   - `.card-scene` (`<button>`) はホバー/フォーカス時に `translateY(-3px)` + 軽い `drop-shadow` を出してクリック誘導する。`:disabled` (= めくり済み) ではポインタも昇降も止める。
   - `.card-flipper` (preserve-3d / backface-visibility hidden) は `data-flipped="true"` になった瞬間だけ `card-flip` キーフレーム (940ms, `--ease-emphasized`) を再生する。React の state 変化で属性が切り替わると CSS 側でアニメが点火される、というだけのシンプルな構造。
-  - 逆位置 (`reversed: true`) でも前面のカード絵柄は upright のまま。`engine.ts` 由来の「（逆）」題と reversed キーワードはテキストとしてのみ残る。
+  - `.card-orient[data-reversed="true"]` には **静的な** `transform: rotateZ(180deg)` が常時かかっており、めくり終わると前面が逆さまで現れる (アニメ化しない方針 — 逆さまは結果状態であって演出ではない)。`backface-visibility: hidden` のおかげで裏向き中はこの回転は見えない。
 - `.reveal-button` — `Home.tsx` の「結果を見る/閉じる」ボタンに付く wind-up。`:active` 中だけ scale 0.96 + 金色シマー (`shimmer-sweep` キーフレーム + `::before`) が走る。
-- `@media (prefers-reduced-motion: reduce)` では `card-flip` を含む全アニメを `animation: none !important` にし、`.card-flipper[data-flipped="true"]` だけ `transform: rotateY(180deg)` 直結で前面静止 (= クリックすると瞬時に表向きになる)。`.card-scene` のホバー昇降も殺す。
+- `@media (prefers-reduced-motion: reduce)` では `card-flip` を含む全アニメを `animation: none !important` にし、`.card-flipper[data-flipped="true"]` だけ `transform: rotateY(180deg)` 直結で前面静止 (= クリックすると瞬時に表向きになる)。`.card-orient[data-reversed="true"]` の rotateZ(180°) は静的なのでそのまま効き、逆位置カードは reduced-motion でも上下逆さまで現れる。`.card-scene` のホバー昇降も殺す。
 
 新しい占いを足す時は、追加の `reveal-child` ラベルや stagger 番号は不要 — `FortuneBlock` の `.reveal-block` が自動で全体を包むので、子要素が `FortuneResultView` 経由なら既存スタガーに自然に乗る。
 

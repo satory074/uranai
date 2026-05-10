@@ -68,7 +68,10 @@ export function TarotCard({
               {position}
             </div>
           )}
-          <div className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3">
+          <div
+            className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3"
+            data-reversed={reversed ? 'true' : 'false'}
+          >
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" />
