@@ -27,6 +27,7 @@ export function Home() {
   const [mei, setMei] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [expanded, setExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
+  const [tarotFlipped, setTarotFlipped] = useState<[boolean, boolean, boolean]>([false, false, false]);
 
   const toggle = (id: FortuneId) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -56,6 +57,7 @@ export function Home() {
           className="bg-white/80 rounded-2xl border border-amber-900/10 p-5 md:p-6 shadow-sm"
           onSubmit={(e) => {
             e.preventDefault();
+            setTarotFlipped([false, false, false]);
             setSubmitted(true);
           }}
         >
@@ -150,10 +152,27 @@ export function Home() {
   const shichuResult = readShichu(birthDate);
   const sanmeiResult = readSanmei(birthDate);
 
+  const allTarotFlipped = tarotFlipped.every(Boolean);
+  const gatedTarotResult: FortuneResult = {
+    ...tarotThree.result,
+    subtitle: allTarotFlipped ? tarotThree.result.subtitle : undefined,
+    sections: tarotThree.result.sections.map((s, i) =>
+      tarotFlipped[i]
+        ? s
+        : { title: TAROT_POSITIONS[i], body: 'カードをタップして結果を見る' },
+    ),
+  };
+  const flipTarotAt = (i: number) =>
+    setTarotFlipped((prev) => {
+      const next = [...prev] as [boolean, boolean, boolean];
+      next[i] = true;
+      return next;
+    });
+
   type Entry = { id: FortuneId; result: FortuneResult };
   const entries: Entry[] = [
     omikujiResult ? { id: 'omikuji', result: omikujiResult } : null,
-    { id: 'tarot-three', result: tarotThree.result },
+    { id: 'tarot-three', result: gatedTarotResult },
     seimeiResult ? { id: 'seimei', result: seimeiResult } : null,
     { id: 'astrology', result: astrologyResult },
     { id: 'kyusei', result: kyuseiResult },
@@ -224,8 +243,8 @@ export function Home() {
       >
         <FortuneResultView
           id="result-tarot-three"
-          result={tarotThree.result}
-          headline={headlineFor('tarot-three', tarotThree.result)}
+          result={gatedTarotResult}
+          headline={tarotFlipped[0] ? headlineFor('tarot-three', tarotThree.result) : undefined}
           sectionPrefix={(i) => {
             const d = tarotThree.drawn[i];
             return d ? (
@@ -235,6 +254,8 @@ export function Home() {
                 size="sm"
                 revealIndex={i}
                 position={TAROT_POSITIONS[i]}
+                flipped={tarotFlipped[i]}
+                onFlip={() => flipTarotAt(i)}
               />
             ) : null;
           }}

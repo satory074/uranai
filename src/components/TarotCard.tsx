@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import type { Card } from '../fortunes/tarot/cards';
 
 const MOTIFS: Record<number, string> = {
@@ -14,14 +14,17 @@ export function TarotCard({
   size = 'md',
   revealIndex = 0,
   position,
+  flipped,
+  onFlip,
 }: {
   card: Card;
   reversed?: boolean;
   size?: 'sm' | 'md' | 'lg';
   revealIndex?: number;
   position?: string;
+  flipped: boolean;
+  onFlip?: () => void;
 }) {
-  const [flipped, setFlipped] = useState(false);
   const dims =
     size === 'sm' ? 'w-24 h-40' : size === 'lg' ? 'w-48 h-72' : 'w-32 h-52';
 
@@ -36,7 +39,7 @@ export function TarotCard({
   return (
     <button
       type="button"
-      onClick={() => setFlipped(true)}
+      onClick={() => onFlip?.()}
       disabled={flipped}
       aria-pressed={flipped}
       aria-label={ariaLabel}
