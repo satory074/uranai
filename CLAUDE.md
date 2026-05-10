@@ -89,16 +89,17 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 各 `<FortuneBlock>` には「占いについて」トグルがあり、押すと `<FortuneAboutPanel id={fortuneId} />` (`src/components/FortuneAboutPanel.tsx`) が結果の上に展開される。中身は 2 セクション:
 
-1. **占いの背景** — 5 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。
+1. **占いの背景** — 6 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake` / `whenItChanges`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。最後の `whenItChanges` は「同じ人がもう一度占うと？」というラベルで、入力が変わらない限り結果が変わらない理由を占いごとに固有の表現で説明する (omikuji だけは「日付が変わるたびに変わる」と書く)。
 2. **ぜんぶの要素** — 占いごとに見た目が違うため、占い別カタログコンポーネントに分離 (`src/components/elementCatalogs/`):
    - `OmikujiCatalog.tsx` — 6 ランクの表 (rank / 出現比率 / スコア帯)
    - `TarotCatalog.tsx` — 22 枚の大アルカナを 1〜2 列グリッドで。静的 `<TarotCatalogCard>` を内包 (`<TarotCard>` は flip インタラクション前提なので再利用しない)。SVG モチーフは `src/components/tarotMotifs.ts` に切り出した `MOTIFS` map を共有
-   - `SeimeiCatalog.tsx` — 五格 (天/人/地/外/総) のローカル定数 `GOKAKU_INFO`。engine.ts には計算ロジックしかなく、説明文はカタログ側のみが持つ
+   - `SeimeiCatalog.tsx` — 五格 (天/人/地/外/総) のローカル定数 `GOKAKU_INFO` で、about パネル用の格ごとの解説を持つ
+   - **seimei の結果側のテキストは `seimei/judge.ts` の `HINTS: Record<Position, Record<Tone, string>>` に集約** (5 格 × 4 トーン = 20 ヒント)。`Position` は `'天' | '人' | '地' | '外' | '総'`、`Tone` は `'bright' | 'mild' | 'cool' | 'caution'` (画数 1〜81 を 4 トーンに分類)。`tonalLabelFor(position, strokes)` が `{ tone, label, hint }` を返し、`engine.ts` は section ごとに `hint` をそのまま `body` に置く (プレフィックスは付けない ── 各 hint は格名を本文に内包しているため)。新しいヒント表現を試したいときは 4 トーンの語彙を変えるのではなく、`HINTS` の格×トーンのテキストだけを書き換える。トーン分類 (`bright/mild/cool/caution` のセット) は古典の吉数/凶数を参考に決定済みで触らない
    - `AstrologyCatalog.tsx` / `KyuseiCatalog.tsx` / `ShichuCatalog.tsx` / `SanmeiCatalog.tsx` — それぞれ既存の `SIGNS` / `STARS` / `STEM_TYPES` / `SANMEI_STARS` を import し、共有の `<NarrativeCard>` (`elementCatalogs/NarrativeCard.tsx`) で 11 個の narrative フィールド + 3 つの lucky タイルを表示
 
 `FortuneAboutPanel` は `panelId` を受け取り、`<article id={panelId}>` を出すことで、ヘッダボタンの `aria-controls` 参照と一致させている (disclosure pattern)。パネル全体に `.reveal-block` を 1 回だけ適用 (中身の各カードに `.reveal-child` でスタガーはかけない — 22 枚に当てると 1.7 秒かかって破綻するため)。
 
-新しい占いを足す時は: (1) `methodInfo.ts` の `METHOD_INFO` に 5 フィールド追加、(2) `elementCatalogs/` に新カタログ作成、(3) `FortuneAboutPanel.tsx` の `CATALOG_TITLE` と `renderCatalog` switch にケース追加。
+新しい占いを足す時は: (1) `methodInfo.ts` の `METHOD_INFO` に 6 フィールド追加、(2) `elementCatalogs/` に新カタログ作成、(3) `FortuneAboutPanel.tsx` の `CATALOG_TITLE` と `renderCatalog` switch にケース追加。
 
 ### Reveal animations (`src/index.css`)
 
@@ -130,6 +131,20 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - `julianDay.ts` — Gregorian → Julian Day Number (Fliegel–Van Flandern), then `dayStemBranch` / `yearStemBranch` derive the 60-cycle index. `risshunYear` applies the **Feb 4 cutoff** (Jan 1 – Feb 3 belongs to the previous year). All Eastern fortunes (`kyusei`, `shichu`, `sanmei`) must respect this cutoff.
 - `kanjiStrokes.ts` — hiragana・katakana table と `strokeOf` / `strokesOfText` のロジック。漢字本体は `kanjiStrokes.data.ts` から import。Used only by `seimei`. Unknown chars are surfaced to the UI as "画数不明" rather than silently treated as 0.
 - `kanjiStrokes.data.ts` — **自動生成**された **shinjitai** (新字体) stroke-count table for ~13,000 kanji。常用漢字 + 人名用漢字 + JIS X 0208 (第1+第2水準) + JIS X 0212/0213 を網羅。**手で編集しない**。再生成は `uv run python scripts/build_kanji_dict.py` (KANJIDIC2 を取得して書き換える)。スクリプト内の `MANUAL_OVERRIDES` で KANJIDIC2 に存在しない人名異体字 (例: `髙`) を補完。
+
+### 結果本文の長さ規約
+
+`signs.ts` / `data.ts` (kyusei) / `stems.ts` / `stars.ts` (sanmei) / `cards.ts` の主要本文フィールドは、項目ごとに以下の文字数を目安に書く (commit `cb51754` で全エントリを書き直した際の基準):
+
+| フィールド | 目安 | ねらい |
+|---|---|---|
+| `summary` | 80〜120 字 (1〜2 文) | キャッチー一文 + 補足一文 |
+| `general` | 130〜180 字 (2〜3 文) | 中核の性質 + 強みの具体像 + 内面の特徴 |
+| `love` / `work` / `growth` / `shadow` | 各 80〜140 字 (2 文) | 状況描写 + 提案 |
+| タロット `body` (正逆共通) | 100〜150 字 (2 文) | 比喩 + 行動のヒント (正逆で対比) |
+| `catchphrase` / `advice` / `luckyColor` / `luckyItem` / タロット `keywords` | 短さに意味があるため**現状維持**で書く | タグライン・3 単語 |
+
+トーン: 「長所と短所をペアで」「相反する特徴を併置」「具体名詞を多めに」がバーナム効果に流されすぎないコツ。omikuji の `data.ts` (テンプレート集) はこの規約の対象外で、引き当ての候補文として独自に管理。
 
 ### Calculation notes (intentionally simplified)
 
