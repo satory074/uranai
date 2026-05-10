@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { Card } from '../fortunes/tarot/cards';
 
 const MOTIFS: Record<number, string> = {
@@ -13,16 +13,15 @@ export function TarotCard({
   reversed = false,
   size = 'md',
   revealIndex = 0,
-  flipped = true,
   position,
 }: {
   card: Card;
   reversed?: boolean;
   size?: 'sm' | 'md' | 'lg';
   revealIndex?: number;
-  flipped?: boolean;
   position?: string;
 }) {
+  const [flipped, setFlipped] = useState(false);
   const dims =
     size === 'sm' ? 'w-24 h-40' : size === 'lg' ? 'w-48 h-72' : 'w-32 h-52';
 
@@ -30,13 +29,19 @@ export function TarotCard({
   const faceClass =
     'card-face rounded-xl border-2 border-amber-700/30 bg-gradient-to-b from-indigo-900 to-violet-950 text-amber-200 shadow-md flex flex-col items-center justify-between p-3 overflow-hidden';
   const keywords = (reversed ? card.reversed.keywords : card.upright.keywords).join('・');
+  const ariaLabel = flipped
+    ? `${position ? position + ' — ' : ''}${card.name} ${reversed ? '逆位置' : '正位置'}`
+    : `${position ? position + ' — ' : ''}カード裏面 — タップしてめくる`;
 
   return (
-    <div
-      className={`card-scene ${dims} relative`}
+    <button
+      type="button"
+      onClick={() => setFlipped(true)}
+      disabled={flipped}
+      aria-pressed={flipped}
+      aria-label={ariaLabel}
+      className={`card-scene ${dims} relative appearance-none border-0 bg-transparent p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 rounded-xl`}
       style={sceneStyle}
-      aria-label={`${position ? position + ' — ' : ''}${card.name} ${reversed ? '逆位置' : '正位置'}`}
-      role="img"
     >
       <div className="card-flipper" data-flipped={flipped ? 'true' : 'false'}>
         <div className={`${faceClass} card-face-back`} aria-hidden>
@@ -63,10 +68,7 @@ export function TarotCard({
               {position}
             </div>
           )}
-          <div
-            className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3"
-            data-reversed={reversed ? 'true' : 'false'}
-          >
+          <div className="card-orient absolute inset-0 flex flex-col items-center justify-between p-3">
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" />
@@ -83,6 +85,6 @@ export function TarotCard({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

@@ -50,28 +50,6 @@ body {
   100% { transform: rotateY(180deg)  translateZ(0)     translateY(0); }
 }
 
-@keyframes card-wobble {
-  0%, 100% { transform: translateY(0)    rotateZ(0); }
-  20%      { transform: translateY(-2px) rotateZ(-1.5deg); }
-  50%      { transform: translateY(0)    rotateZ(0); }
-  80%      { transform: translateY(-2px) rotateZ(1.5deg); }
-}
-
-@keyframes orient-upright {
-  0%, 100% { transform: rotateZ(0); }
-  30%      { transform: rotateZ(-2deg); }
-  60%      { transform: rotateZ(2deg); }
-  85%      { transform: rotateZ(-1deg); }
-}
-
-@keyframes orient-reversed {
-  0%   { transform: rotateZ(0); }
-  18%  { transform: rotateZ(-8deg); }
-  35%  { transform: rotateZ(-4deg); }
-  85%  { transform: rotateZ(192deg); }
-  100% { transform: rotateZ(180deg); }
-}
-
 @keyframes shimmer-sweep {
   0%   { transform: translateX(-120%) skewX(-20deg); opacity: 0; }
   20%  { opacity: 1; }
@@ -90,8 +68,18 @@ body {
 
 .card-scene {
   perspective: 1400px;
-  animation: card-wobble 600ms var(--ease-emphasized) both;
-  animation-delay: calc(var(--reveal-i, 0) * 360ms);
+  cursor: pointer;
+  transition: transform 200ms var(--ease-emphasized), filter 200ms var(--ease-emphasized);
+}
+
+.card-scene:disabled {
+  cursor: default;
+}
+
+.card-scene:not(:disabled):hover,
+.card-scene:not(:disabled):focus-visible {
+  transform: translateY(-3px);
+  filter: drop-shadow(0 6px 10px rgba(31, 27, 46, 0.18));
 }
 
 .card-flipper {
@@ -105,7 +93,6 @@ body {
 
 .card-flipper[data-flipped="true"] {
   animation: card-flip 940ms var(--ease-emphasized) both;
-  animation-delay: calc(var(--reveal-i, 0) * 360ms + 600ms);
 }
 
 .card-face {
@@ -125,17 +112,6 @@ body {
 
 .card-orient {
   transform-origin: 50% 50%;
-  will-change: transform;
-}
-
-.card-flipper[data-flipped="true"] .card-orient[data-reversed="false"] {
-  animation: orient-upright 600ms var(--ease-emphasized) both;
-  animation-delay: calc(var(--reveal-i, 0) * 360ms + 1740ms);
-}
-
-.card-flipper[data-flipped="true"] .card-orient[data-reversed="true"] {
-  animation: orient-reversed 700ms var(--ease-overshoot) both;
-  animation-delay: calc(var(--reveal-i, 0) * 360ms + 1740ms);
 }
 
 .reveal-button {
@@ -168,19 +144,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .reveal-block,
   .reveal-child,
-  .card-scene,
   .card-flipper[data-flipped="true"],
-  .card-orient,
   .reveal-button:active:not(:disabled)::before {
     animation: none !important;
+  }
+  .card-scene {
+    transition: none;
+  }
+  .card-scene:not(:disabled):hover,
+  .card-scene:not(:disabled):focus-visible {
+    transform: none;
+    filter: none;
   }
   .reveal-button:active:not(:disabled) {
     transform: none !important;
   }
-  .card-flipper {
+  .card-flipper[data-flipped="true"] {
     transform: rotateY(180deg);
-  }
-  .card-orient[data-reversed="true"] {
-    transform: rotateZ(180deg);
   }
 }
