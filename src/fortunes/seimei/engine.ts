@@ -54,8 +54,8 @@ export function readSeimei(input: SeimeiInput): FortuneResult {
   if (calc.unknownChars.length > 0) {
     return {
       title: `${fullName} さん`,
-      subtitle: '画数辞書に含まれない文字があります',
-      summary: `「${calc.unknownChars.join('、')}」の画数を判定できませんでした。本サイトの画数辞書は新字体の常用漢字＋人名用漢字を中心に収録しているため、対象外の文字が含まれていると算出できません。お手数ですが別の漢字でお試しください。`,
+      subtitle: '画数辞書に含まれない文字があります（異体字・環境依存文字など）',
+      summary: `「${calc.unknownChars.join('、')}」の画数を判定できませんでした。本サイトの画数辞書は新字体の常用漢字・人名用漢字・JIS第1水準を収録していますが、それ以外の異体字や環境依存文字は対象外です。お手数ですが別の漢字でお試しください。`,
       sections: [
         {
           title: 'ご案内',

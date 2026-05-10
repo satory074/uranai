@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build script cache (KANJIDIC2 download)
+scripts/_cache/
