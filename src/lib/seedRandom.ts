@@ -1,31 +1,37 @@
-function xmur3(str: string): () => number {
-  let h = 1779033703 ^ str.length;
+// 64-bit deterministic PRNG.
+// seed string → FNV-1a 64-bit → splitmix64 stream → float [0,1).
+// 出力エントロピー上限は 2^64 ≈ 1.8×10^19 で、テンプレ拡張後の出力空間 (~6.6×10^13) を完全に上回る。
+
+const MASK64 = 0xffffffffffffffffn;
+const FNV_OFFSET = 0xcbf29ce484222325n;
+const FNV_PRIME = 0x100000001b3n;
+const SM64_INC = 0x9e3779b97f4a7c15n;
+const SM64_M1 = 0xbf58476d1ce4e5b9n;
+const SM64_M2 = 0x94d049bb133111ebn;
+
+function hashSeed64(str: string): bigint {
+  let h = FNV_OFFSET;
   for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
+    h ^= BigInt(str.charCodeAt(i));
+    h = (h * FNV_PRIME) & MASK64;
   }
-  return () => {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    h ^= h >>> 16;
-    return h >>> 0;
-  };
+  return h;
 }
 
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
+function splitmix64(seed: bigint): () => number {
+  let s = seed & MASK64;
   return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    s = (s + SM64_INC) & MASK64;
+    let z = s;
+    z = ((z ^ (z >> 30n)) * SM64_M1) & MASK64;
+    z = ((z ^ (z >> 27n)) * SM64_M2) & MASK64;
+    z = (z ^ (z >> 31n)) & MASK64;
+    return Number(z >> 11n) / 2 ** 53;
   };
 }
 
 export function createRng(seedStr: string): () => number {
-  const seedFn = xmur3(seedStr);
-  return mulberry32(seedFn());
+  return splitmix64(hashSeed64(seedStr));
 }
 
 export function pick<T>(rng: () => number, list: readonly T[]): T {

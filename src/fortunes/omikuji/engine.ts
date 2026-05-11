@@ -1,4 +1,5 @@
 import type { FortuneResult } from '../types';
+import type { Category } from './data';
 import { createRng, pick, pickWeighted, todayIsoDate } from '../../lib/seedRandom';
 import { RANKS, TEMPLATES, COLORS, ITEMS, ACTIONS } from './data';
 
@@ -20,12 +21,14 @@ export function drawOmikuji({ name }: OmikujiInput = {}): FortuneResult {
   const score = Math.floor(lo + rng() * (hi - lo + 1));
 
   const t = TEMPLATES[rank.name];
+  const compose = (cat: Category) => `${pick(rng, t[cat].open)}${pick(rng, t[cat].close)}`;
+
   const sections = [
-    { title: '全体運', body: pick(rng, t.total) },
-    { title: '恋愛運', body: pick(rng, t.love) },
-    { title: '仕事運', body: pick(rng, t.work) },
-    { title: '金運',   body: pick(rng, t.money) },
-    { title: '健康運', body: pick(rng, t.health) },
+    { title: '全体運', body: compose('total') },
+    { title: '恋愛運', body: compose('love') },
+    { title: '仕事運', body: compose('work') },
+    { title: '金運',   body: compose('money') },
+    { title: '健康運', body: compose('health') },
   ];
 
   return {
