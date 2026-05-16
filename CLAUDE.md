@@ -40,7 +40,7 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 | `omikuji`     | 姓名 (任意; 無ければ `'guest'` シード) | 6 ランク × 5 運勢のおみくじ |
 | `tarot-three` | 生年月日 + 姓名 (シード)   | 過去 / 現在 / 未来 の 3 セクション (`drawn[]` も返す) |
 | `seimei`      | 姓 + 名 (両方必要)         | 五格 (天/人/地/外/総) + 簡易解釈 |
-| `astrology`   | 生年月日                   | 太陽星座 1 セクション       |
+| `astrology`   | 生年月日 + 今日の日付       | 太陽星座 (本質) 5 セクション + 今日の月星座 (合成) 2 セクション、ラッキー/アドバイスは日替わり |
 | `kyusei`      | 生年月日 (立春切替)        | 本命星 1 セクション         |
 | `shichu`      | 生年月日                   | 日干タイプ 1 セクション     |
 | `sanmei`      | 生年月日 (立春切替)        | 独自10星 1 セクション       |
@@ -127,6 +127,7 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 - `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle).
 - `julianDay.ts` — Gregorian → Julian Day Number (Fliegel–Van Flandern), then `dayStemBranch` / `yearStemBranch` derive the 60-cycle index. `risshunYear` applies the **Feb 4 cutoff** (Jan 1 – Feb 3 belongs to the previous year). All Eastern fortunes (`kyusei`, `shichu`, `sanmei`) must respect this cutoff.
+- `moonSign.ts` — 月の黄経を簡易近似で計算 (`gregorianToJulianDay` を起点に Meeus 主要項のみ採用) → 30° で切って星座インデックス・名前 (`MoonSignName`) を返す。`astrology` engine の「今日の月の星座」判定に使用。出力は 12 星座の和名で `astrology/signs.ts` の `Sign.name` と一致。
 - `kanjiStrokes.ts` — hiragana・katakana table と `strokeOf` / `strokesOfText` のロジック。漢字本体は `kanjiStrokes.data.ts` から import。Used only by `seimei`. Unknown chars are surfaced to the UI as "画数不明" rather than silently treated as 0.
 - `kanjiStrokes.data.ts` — **自動生成**された **shinjitai** (新字体) stroke-count table for ~13,000 kanji。常用漢字 + 人名用漢字 + JIS X 0208 (第1+第2水準) + JIS X 0212/0213 を網羅。**手で編集しない**。再生成は `uv run python scripts/build_kanji_dict.py` (KANJIDIC2 を取得して書き換える)。スクリプト内の `MANUAL_OVERRIDES` で KANJIDIC2 に存在しない人名異体字 (例: `髙`) を補完。
 - `japaneseColors.ts` — 和色名 → hex の表示専用マップ (`JAPANESE_COLORS`) と `resolveColor(name)` ヘルパー。`<ColorSwatch>` から呼ばれる。詳細は上の「Result presentation layer」のラッキーカラー節を参照。新しい `luckyColor` をデータ側に増やしたらこのマップにも追記。
@@ -147,10 +148,13 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 omikuji の `data.ts` はこの規約の対象外。**2 セグメント合成構造** ── 各 (rank, category) は `{ open: string[]; close: string[] }` を持ち、任意の open × 任意の close を連結して 1 文に仕立てる (`omikuji/engine.ts` の `compose()`)。これで出力空間が 6 × 64^5 × 32 × 32 × 30 ≈ **6.6×10^13 通り**まで広がり「未来永劫被らない」を達成している。新しい候補文を足す時は open と close の**両配列に互換性のある対**を加えること: open は情景・観察 (「〜日です。」「〜時です。」)、close は提案・行動 (「〜してみて。」「〜が吉。」)。任意の組み合わせで自然に読めることが不変条件。単一文として 1 つの配列に放り込むのは禁則 ── 連結された側がただ消えてしまう。COLORS/ITEMS は各 32、ACTIONS は 30 をプール (色は `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップ範囲内から選ぶ)。
 
+`astrology/dailyData.ts` も同じ規約の対象外で、同じ open/close 合成パターンを採用。`MOON_MOOD` は 12 月星座 × `{open: 8, close: 8}` (今日の月空セクション)、`RESONANCE` は 16 元素ペア (太陽元素 × 月元素) × `{open: 8, close: 8}` (本質との響きセクション)、`DAILY_ACTION` は共有 `{open: 24, close: 24}` (ひとことアドバイス)、`DAILY_COLORS` / `DAILY_ITEMS` は各 32 のプール。1 入力 (太陽座, 月座, 日付) あたりの出力空間は 64 × 64 × 576 × 32 × 32 ≈ 2.4×10^9 で、(12太陽 × 12月 × 365日) を掛けると 10^14 オーダー (omikuji を 1 桁上回る)。`engine.ts` は `astrology|${alias}|${moonName}|${todayIso}` をシードに `createRng` + `pick` で取り出す。新しい色を `DAILY_COLORS` に追加する場合は **必ず `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップに存在する名前のみ** にすること (`<ColorSwatch>` の色見本表示が前提)。
+
 ### Calculation notes (intentionally simplified)
 
-- This is an **entry-level "type diagnosis" tool**, not a serious命式. We deliberately stop at sun sign (no ASC/月星座), day stem only (no 月柱/時柱), 本命星 only (no 月命星/吉方位), year stem only for `sanmei`.
+- This is an **entry-level "type diagnosis" tool**, not a serious命式. astrology は太陽星座 (本質) + 今日の月の星座 (日替わりの空気) の二層を扱う簡易版 (ASC・他惑星・ハウス・アスペクトはなし)。day stem only (no 月柱/時柱), 本命星 only (no 月命星/吉方位), year stem only for `sanmei`.
 - 西洋占星術 boundaries are **fixed representative dates** (e.g. 牡羊座 = 3/21–4/19). The actual sun-longitude crossings shift by hours each year — we don't compute them.
+- 月の星座は Meeus 低精度近似 (`src/lib/moonSign.ts` の `moonLongitude` = mean longitude + 主要な中心の式項のみ) で計算しており、精度は ±1〜2° 程度。境目の 1 日は前後どちらの星座にも揺らぐ可能性 (月は約 2.5 日ごとに次の星座へ移る)。methodInfo の `simplified` で明示。
 - Stroke-count 流派 differences exist; we use shinjitai only and say so in the UI. Don't add per-school toggles without a clear product reason.
 
 ## Copyright / trademark constraints (load-bearing)

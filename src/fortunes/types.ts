@@ -64,9 +64,9 @@ export const FORTUNES: FortuneInfo[] = [
   {
     id: 'astrology',
     displayName: '星読み診断',
-    traditionalName: '西洋占星術・太陽星座',
+    traditionalName: '西洋占星術・太陽星座 × 月の星座',
     description:
-      '西洋占星術のうち、生年月日から決まる「太陽星座」12タイプを読み解きます。あなたらしい性質や持ち味の傾向を眺める入門編です。',
+      '西洋占星術の太陽星座 12 タイプで本質をスケッチし、今日の月の星座から「今日の空気」も合わせて読み解く星読みです。本質は不変、月の星座は約 2.5 日で次の星座へ移り、日替わりの風景が立ち上がります。',
     emoji: '✨',
     accent: 'from-sky-200 to-blue-200',
   },
