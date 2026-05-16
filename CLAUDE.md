@@ -40,7 +40,7 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 | `omikuji`     | 姓名 (任意; 無ければ `'guest'` シード) | 6 ランク × 5 運勢のおみくじ |
 | `tarot-three` | 生年月日 + 姓名 (シード)   | 過去 / 現在 / 未来 の 3 セクション (`drawn[]` も返す) |
 | `seimei`      | 姓 + 名 (両方必要)         | 五格 (天/人/地/外/総) + 簡易解釈 |
-| `astrology`   | 生年月日 + 今日の日付       | 太陽星座 (本質) 5 セクション + 今日の月星座 (合成) 2 セクション、ラッキー/アドバイスは日替わり |
+| `astrology`   | 生年月日 + 今日の日付       | 太陽星座をラベルとして、今日のテーマ (summary) + 4 つの運勢 (全体/恋愛/仕事/健康) を日替わりで合成。性格判断パートは持たない |
 | `kyusei`      | 生年月日 (立春切替)        | 本命星 1 セクション         |
 | `shichu`      | 生年月日                   | 日干タイプ 1 セクション     |
 | `sanmei`      | 生年月日 (立春切替)        | 独自10星 1 セクション       |
@@ -148,7 +148,14 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 omikuji の `data.ts` はこの規約の対象外。**2 セグメント合成構造** ── 各 (rank, category) は `{ open: string[]; close: string[] }` を持ち、任意の open × 任意の close を連結して 1 文に仕立てる (`omikuji/engine.ts` の `compose()`)。これで出力空間が 6 × 64^5 × 32 × 32 × 30 ≈ **6.6×10^13 通り**まで広がり「未来永劫被らない」を達成している。新しい候補文を足す時は open と close の**両配列に互換性のある対**を加えること: open は情景・観察 (「〜日です。」「〜時です。」)、close は提案・行動 (「〜してみて。」「〜が吉。」)。任意の組み合わせで自然に読めることが不変条件。単一文として 1 つの配列に放り込むのは禁則 ── 連結された側がただ消えてしまう。COLORS/ITEMS は各 32、ACTIONS は 30 をプール (色は `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップ範囲内から選ぶ)。
 
-`astrology/dailyData.ts` も同じ規約の対象外で、同じ open/close 合成パターンを採用。`MOON_MOOD` は 12 月星座 × `{open: 8, close: 8}` (今日の月空セクション)、`RESONANCE` は 16 元素ペア (太陽元素 × 月元素) × `{open: 8, close: 8}` (本質との響きセクション)、`DAILY_ACTION` は共有 `{open: 24, close: 24}` (ひとことアドバイス)、`DAILY_COLORS` / `DAILY_ITEMS` は各 32 のプール。1 入力 (太陽座, 月座, 日付) あたりの出力空間は 64 × 64 × 576 × 32 × 32 ≈ 2.4×10^9 で、(12太陽 × 12月 × 365日) を掛けると 10^14 オーダー (omikuji を 1 桁上回る)。`engine.ts` は `astrology|${alias}|${moonName}|${todayIso}` をシードに `createRng` + `pick` で取り出す。新しい色を `DAILY_COLORS` に追加する場合は **必ず `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップに存在する名前のみ** にすること (`<ColorSwatch>` の色見本表示が前提)。
+`astrology/dailyData.ts` も同じ規約の対象外で、同じ open/close 合成パターンを採用。出力は summary + 4 category sections + ラッキー*。プールは:
+- `MOON_MOOD`: 12 月星座 × `{open: 8, close: 8}` → summary の前半に使用
+- `RESONANCE`: 16 元素ペア (太陽 × 月) × `{open: 8, close: 8}` → summary の後半に使用
+- `DAILY_CATEGORY`: 4 categories (`overall` / `love` / `work` / `health`) × `{open: 12, close: 12}` → 4 つの運勢セクション
+- `DAILY_ACTION`: 共有 `{open: 24, close: 24}` → ひとことアドバイス
+- `DAILY_COLORS` / `DAILY_ITEMS`: 各 32 のプール
+
+1 入力 (太陽座, 月座, 日付) あたりの組み合わせ空間: summary 64 × 64 + 4 cat × 144 + advice 576 + color 32 × item 32 = 約 10^11、(12太陽 × 12月 × 365日) を掛けると **約 10^15 オーダー** (omikuji を 1〜2 桁上回る)。`engine.ts` は `astrology|${alias}|${moonName}|${todayIso}` をシードに `createRng` + `pick` で取り出す。性格判断系のテキストは出力しない (sign.general/love/work/growth/shadow/catchphrase は `AstrologyCatalog` の about パネルでのみ参照される)。新しい色を `DAILY_COLORS` に追加する場合は **必ず `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップに存在する名前のみ** にすること (`<ColorSwatch>` の色見本表示が前提)。
 
 ### Calculation notes (intentionally simplified)
 

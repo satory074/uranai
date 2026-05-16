@@ -6,6 +6,7 @@ import {
   MOON_MOOD,
   RESONANCE,
   DAILY_ACTION,
+  DAILY_CATEGORY,
   DAILY_COLORS,
   DAILY_ITEMS,
   type Element,
@@ -25,7 +26,8 @@ export function readSunSign({ year, month, day }: AstrologyInput): FortuneResult
   const sign = findSign(month, day);
 
   // 今日 (クライアントのローカル日付) を取得して月の星座を計算する。
-  // 太陽星座の本質判断は生年月日から不変だが、月星座・合成文・ラッキー要素は日替わりで変わる。
+  // 太陽星座は不変の「あなたが何座か」というラベルだけに使い、
+  // 結果テキストは月の星座と日付から日替わりで合成する。
   const now = new Date();
   const todayY = now.getFullYear();
   const todayM = now.getMonth() + 1;
@@ -44,34 +46,33 @@ export function readSunSign({ year, month, day }: AstrologyInput): FortuneResult
   const moonMood = MOON_MOOD[moonName];
   const resonance = RESONANCE[pairKey];
 
-  const moonBody = `${pick(rng, moonMood.open)}${pick(rng, moonMood.close)}`;
-  const resonanceBody = `${pick(rng, resonance.open)}${pick(rng, resonance.close)}`;
-  const dailyAdvice = `${pick(rng, DAILY_ACTION.open)}${pick(rng, DAILY_ACTION.close)}`;
+  // 今日のテーマ (summary) は「月星座の空気 + 元素ペアの行動ヒント」を合成。
+  // → MOON_MOOD と RESONANCE はラッキー要素と並び、本文の核として再利用する。
+  const summary = `${pick(rng, moonMood.open)}${pick(rng, resonance.close)}`;
+
+  const composeCategory = (cat: keyof typeof DAILY_CATEGORY) =>
+    `${pick(rng, DAILY_CATEGORY[cat].open)}${pick(rng, DAILY_CATEGORY[cat].close)}`;
 
   return {
-    title: `${sign.name} ${sign.symbol}  ${sign.catchphrase}`,
-    subtitle: `${year}年${month}月${day}日生まれ / 太陽星座 ${sign.alias} / 今日の月: ${moonName}`,
-    summary: sign.summary,
+    title: `${sign.name} ${sign.symbol}  今日の星読み`,
+    subtitle: `${year}年${month}月${day}日生まれ / 太陽 ${sign.alias} × 月 ${moonName} / ${todayIso}`,
+    summary,
     sections: [
-      { title: '基本性質', body: sign.general },
-      { title: '愛情・対人', body: sign.love },
-      { title: '仕事・才能', body: sign.work },
-      { title: '伸ばすヒント', body: sign.growth },
-      { title: '気をつけたい瞬間', body: sign.shadow },
-      { title: '今日の月空', body: moonBody },
-      { title: '本質との響き', body: resonanceBody },
+      { title: '全体運', body: composeCategory('overall') },
+      { title: '恋愛運', body: composeCategory('love') },
+      { title: '仕事運', body: composeCategory('work') },
+      { title: '健康運', body: composeCategory('health') },
     ],
     luckyColor: pick(rng, DAILY_COLORS),
     luckyItem: pick(rng, DAILY_ITEMS),
-    advice: dailyAdvice,
+    advice: `${pick(rng, DAILY_ACTION.open)}${pick(rng, DAILY_ACTION.close)}`,
     meta: {
-      星座: sign.name,
-      期間: sign.range,
-      エレメント: sign.element,
-      支配星: sign.ruler,
-      今日の月: moonName,
-      本来のラッキーカラー: sign.luckyColor,
-      本来のラッキーアイテム: sign.luckyItem,
+      太陽星座: sign.name,
+      太陽の元素: sign.element,
+      今日の月の星座: moonName,
+      月の元素: moonElement,
+      元素ペア: pairKey,
+      占い日: todayIso,
     },
   };
 }
