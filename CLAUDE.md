@@ -125,10 +125,11 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 ### Shared utilities (`src/lib/`)
 
-- `seedRandom.ts` — `createRng(seed)` returns a deterministic mulberry32. Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle).
+- `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle).
 - `julianDay.ts` — Gregorian → Julian Day Number (Fliegel–Van Flandern), then `dayStemBranch` / `yearStemBranch` derive the 60-cycle index. `risshunYear` applies the **Feb 4 cutoff** (Jan 1 – Feb 3 belongs to the previous year). All Eastern fortunes (`kyusei`, `shichu`, `sanmei`) must respect this cutoff.
 - `kanjiStrokes.ts` — hiragana・katakana table と `strokeOf` / `strokesOfText` のロジック。漢字本体は `kanjiStrokes.data.ts` から import。Used only by `seimei`. Unknown chars are surfaced to the UI as "画数不明" rather than silently treated as 0.
 - `kanjiStrokes.data.ts` — **自動生成**された **shinjitai** (新字体) stroke-count table for ~13,000 kanji。常用漢字 + 人名用漢字 + JIS X 0208 (第1+第2水準) + JIS X 0212/0213 を網羅。**手で編集しない**。再生成は `uv run python scripts/build_kanji_dict.py` (KANJIDIC2 を取得して書き換える)。スクリプト内の `MANUAL_OVERRIDES` で KANJIDIC2 に存在しない人名異体字 (例: `髙`) を補完。
+- `japaneseColors.ts` — 和色名 → hex の表示専用マップ (`JAPANESE_COLORS`) と `resolveColor(name)` ヘルパー。`<ColorSwatch>` から呼ばれる。詳細は上の「Result presentation layer」のラッキーカラー節を参照。新しい `luckyColor` をデータ側に増やしたらこのマップにも追記。
 
 ### 結果本文の長さ規約
 
@@ -142,7 +143,9 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 | タロット `body` (正逆共通) | 100〜150 字 (2 文) | 比喩 + 行動のヒント (正逆で対比) |
 | `catchphrase` / `advice` / `luckyColor` / `luckyItem` / タロット `keywords` | 短さに意味があるため**現状維持**で書く | タグライン・3 単語 |
 
-トーン: 「長所と短所をペアで」「相反する特徴を併置」「具体名詞を多めに」がバーナム効果に流されすぎないコツ。omikuji の `data.ts` (テンプレート集) はこの規約の対象外で、引き当ての候補文として独自に管理。
+トーン: 「長所と短所をペアで」「相反する特徴を併置」「具体名詞を多めに」がバーナム効果に流されすぎないコツ。
+
+omikuji の `data.ts` はこの規約の対象外。**2 セグメント合成構造** ── 各 (rank, category) は `{ open: string[]; close: string[] }` を持ち、任意の open × 任意の close を連結して 1 文に仕立てる (`omikuji/engine.ts` の `compose()`)。これで出力空間が 6 × 64^5 × 32 × 32 × 30 ≈ **6.6×10^13 通り**まで広がり「未来永劫被らない」を達成している。新しい候補文を足す時は open と close の**両配列に互換性のある対**を加えること: open は情景・観察 (「〜日です。」「〜時です。」)、close は提案・行動 (「〜してみて。」「〜が吉。」)。任意の組み合わせで自然に読めることが不変条件。単一文として 1 つの配列に放り込むのは禁則 ── 連結された側がただ消えてしまう。COLORS/ITEMS は各 32、ACTIONS は 30 をプール (色は `lib/japaneseColors.ts` の `JAPANESE_COLORS` マップ範囲内から選ぶ)。
 
 ### Calculation notes (intentionally simplified)
 
