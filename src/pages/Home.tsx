@@ -118,7 +118,7 @@ export function Home() {
             </Field>
           </div>
           <p className="text-xs text-ink/50 mb-6">
-            姓と名を両方入力すると、姓名判断とおみくじも結果に追加されます。
+            姓と名を両方入力すると、姓名判断も結果に追加されます。
           </p>
 
           <div className="flex justify-end">
@@ -141,7 +141,7 @@ export function Home() {
   const seedHint = `${year}-${month}-${day}|${fullName}`;
   const birthDate = { year, month, day };
 
-  const omikujiResult = hasName ? drawOmikuji({ name: fullName }) : null;
+  const omikujiResult = drawOmikuji(hasName ? { name: fullName } : {});
   const tarotThree = drawThree({ seedHint: `${seedHint}|three` });
   const seimeiResult = hasName ? readSeimei({ sei: trimmedSei, mei: trimmedMei }) : null;
   const astrologyResult = readSunSign(birthDate);
@@ -189,26 +189,24 @@ export function Home() {
 
       {!hasName && (
         <p className="text-xs text-ink/60 bg-mist/60 rounded-lg px-4 py-3 mb-6">
-          姓名を入力すると、姓名判断とおみくじも表示されます。
+          姓名を入力すると、姓名判断も表示されます。
         </p>
       )}
 
-      {omikujiResult && (
-        <FortuneBlock
-          id="fortune-omikuji"
-          info={FORTUNE_MAP['omikuji']}
-          expanded={!!expanded['omikuji']}
-          onToggle={() => toggle('omikuji')}
-          aboutExpanded={!!aboutExpanded['omikuji']}
-          onAboutToggle={() => toggleAbout('omikuji')}
-        >
-          <FortuneResultView
-            id="result-omikuji"
-            result={omikujiResult}
-            headline={headlineFor('omikuji', omikujiResult)}
-          />
-        </FortuneBlock>
-      )}
+      <FortuneBlock
+        id="fortune-omikuji"
+        info={FORTUNE_MAP['omikuji']}
+        expanded={!!expanded['omikuji']}
+        onToggle={() => toggle('omikuji')}
+        aboutExpanded={!!aboutExpanded['omikuji']}
+        onAboutToggle={() => toggleAbout('omikuji')}
+      >
+        <FortuneResultView
+          id="result-omikuji"
+          result={omikujiResult}
+          headline={headlineFor('omikuji', omikujiResult)}
+        />
+      </FortuneBlock>
 
       <FortuneBlock
         id="fortune-tarot-three"

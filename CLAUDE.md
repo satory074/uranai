@@ -67,7 +67,7 @@ The seedHint passed to `drawThree` is derived from the user's input (`${year}-${
 
 Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。
 
-姓名は任意。両方が空のときは姓名判断 (`seimei`) と `omikuji` をスキップする。タロットは姓名が空でも生年月日のみをシードに描画する。
+姓名は任意。両方が空のときは姓名判断 (`seimei`) をスキップする。おみくじとタロットは姓名が空でも引ける ── タロットは生年月日をシードに、おみくじは今日の日付 (姓名なしの場合は `name='guest'` フォールバック) をシードに描画する。
 
 To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts`. Every catalog entry needs `displayName` / `traditionalName` (subtitle) / `description` (1〜2 文の説明、折りたたみ時も常時表示される) / `emoji` / `accent` — all five are load-bearing in `FortuneBlock`'s header. The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
 
