@@ -1,7 +1,7 @@
 import type { FortuneResult } from '../types';
 import { findSign } from './signs';
 import { moonSignName, type MoonSignName } from '../../lib/moonSign';
-import { createRng, pick } from '../../lib/seedRandom';
+import { createRng, pick, pickWeighted } from '../../lib/seedRandom';
 import {
   MOON_MOOD,
   RESONANCE,
@@ -21,6 +21,16 @@ const ELEMENT_BY_MOON_SIGN: Record<MoonSignName, Element> = {
   双子座: '風', 天秤座: '風', 水瓶座: '風',
   蟹座: '水', 蠍座: '水', 魚座: '水',
 };
+
+// 5 段階評価の中央寄り加重 (1=7% / 2=20% / 3=33% / 4=27% / 5=13%)。
+// 1〜5 一様より、テキストとの整合感が取りやすく「いい日/悪い日」の濃淡も穏やかになる。
+const RATING_WEIGHTS = [
+  { value: 1, weight: 1 },
+  { value: 2, weight: 3 },
+  { value: 3, weight: 5 },
+  { value: 4, weight: 4 },
+  { value: 5, weight: 2 },
+] as const;
 
 export function readSunSign({ year, month, day }: AstrologyInput): FortuneResult {
   const sign = findSign(month, day);
@@ -58,10 +68,10 @@ export function readSunSign({ year, month, day }: AstrologyInput): FortuneResult
     subtitle: `${year}年${month}月${day}日生まれ / 太陽 ${sign.alias} × 月 ${moonName} / ${todayIso}`,
     summary,
     sections: [
-      { title: '全体運', body: composeCategory('overall') },
-      { title: '恋愛運', body: composeCategory('love') },
-      { title: '仕事運', body: composeCategory('work') },
-      { title: '健康運', body: composeCategory('health') },
+      { title: '全体運', body: composeCategory('overall'), rating: pickWeighted(rng, RATING_WEIGHTS) },
+      { title: '恋愛運', body: composeCategory('love'),    rating: pickWeighted(rng, RATING_WEIGHTS) },
+      { title: '仕事運', body: composeCategory('work'),    rating: pickWeighted(rng, RATING_WEIGHTS) },
+      { title: '健康運', body: composeCategory('health'),  rating: pickWeighted(rng, RATING_WEIGHTS) },
     ],
     luckyColor: pick(rng, DAILY_COLORS),
     luckyItem: pick(rng, DAILY_ITEMS),

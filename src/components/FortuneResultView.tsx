@@ -70,7 +70,13 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
 
       <div className="reveal-child space-y-3" style={stagger(3)}>
         {result.sections.map((s, i) => (
-          <SectionCard key={i} title={s.title} body={s.body} prefix={sectionPrefix?.(i)} />
+          <SectionCard
+            key={i}
+            title={s.title}
+            body={s.body}
+            rating={s.rating}
+            prefix={sectionPrefix?.(i)}
+          />
         ))}
       </div>
 
@@ -94,10 +100,12 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
 function SectionCard({
   title,
   body,
+  rating,
   prefix,
 }: {
   title: string;
   body: string;
+  rating?: number;
   prefix?: ReactNode;
 }) {
   const idx = body.indexOf('\n\n');
@@ -107,7 +115,10 @@ function SectionCard({
 
   const inner = (
     <div>
-      <h3 className="font-serif text-base text-plum mb-1.5">{title}</h3>
+      <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+        <h3 className="font-serif text-base text-plum">{title}</h3>
+        {typeof rating === 'number' && <RatingStars value={rating} />}
+      </div>
       <p className="text-sm font-semibold text-ink leading-relaxed whitespace-pre-wrap">{lede}</p>
       {detail && (
         <p className="mt-2 text-sm text-ink/75 leading-relaxed whitespace-pre-wrap">{detail}</p>
@@ -126,6 +137,23 @@ function SectionCard({
         inner
       )}
     </section>
+  );
+}
+
+function RatingStars({ value }: { value: number }) {
+  const n = Math.max(0, Math.min(5, Math.round(value)));
+  return (
+    <span
+      className="text-xs tracking-tight text-ink/70"
+      aria-label={`5段階中${n}`}
+      title={`${n} / 5`}
+    >
+      <span aria-hidden="true">
+        {'⭐️'.repeat(n)}
+        {'☆'.repeat(5 - n)}
+      </span>
+      <span className="ml-1.5 text-ink/55">({n}/5)</span>
+    </span>
   );
 }
 

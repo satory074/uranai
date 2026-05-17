@@ -1,6 +1,8 @@
 export type FortuneSection = {
   title: string;
   body: string;
+  /** 1〜5 の 5 段階評価。設定されていると title の右に ⭐ マークが描画される。 */
+  rating?: number;
 };
 
 export type FortuneResult = {

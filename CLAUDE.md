@@ -40,7 +40,7 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 | `omikuji`     | 姓名 (任意; 無ければ `'guest'` シード) | 6 ランク × 5 運勢のおみくじ |
 | `tarot-three` | 生年月日 + 姓名 (シード)   | 過去 / 現在 / 未来 の 3 セクション (`drawn[]` も返す) |
 | `seimei`      | 姓 + 名 (両方必要)         | 五格 (天/人/地/外/総) + 簡易解釈 |
-| `astrology`   | 生年月日 + 今日の日付       | 太陽星座をラベルとして、今日のテーマ (summary) + 4 つの運勢 (全体/恋愛/仕事/健康) を日替わりで合成。性格判断パートは持たない |
+| `astrology`   | 生年月日 + 今日の日付       | 太陽星座をラベルとして、今日のテーマ (summary) + 4 つの運勢 (全体/恋愛/仕事/健康) を日替わりで合成。各セクションには 1〜5 の ⭐ 評価が付く。性格判断パートは持たない |
 | `kyusei`      | 生年月日 (立春切替)        | 本命星 1 セクション         |
 | `shichu`      | 生年月日                   | 日干タイプ 1 セクション     |
 | `sanmei`      | 生年月日 (立春切替)        | 独自10星 1 セクション       |
@@ -74,6 +74,7 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 ### Result presentation layer
 
 - `src/components/resultDerive.ts` derives the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
+- **セクションごとの ⭐ 5 段階評価**: `FortuneSection` の optional `rating?: number` (1〜5) が設定されていると、`SectionCard` の title 行に `<RatingStars>` (`FortuneResultView.tsx` 内ローカル) が `⭐️…☆… (N/5)` 形式で描画される。`aria-label="5段階中N"` 付き。値は engine 側で `pickWeighted(rng, RATING_WEIGHTS)` で決定論的に抽選。現状 astrology の 4 セクションだけで使用。タロットの `sectionPrefix` (左挿しカード) と層が分かれているため共存可能。
 - `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
 - **ラッキーカラーには色見本を出す**: `<FortuneResultView>` の `Highlight` と `<NarrativeCard>` の `MiniHighlight` は `label === 'ラッキーカラー'` の枠だけ `<ColorSwatch name={value} />` (`src/components/ColorSwatch.tsx`) を文字の左に並べる。和色名 → hex のマップは `src/lib/japaneseColors.ts` (`JAPANESE_COLORS` + `resolveColor`)。複合色 (`'白・銀'` 等) は `・` で分割して半々のグラデーション円を描く。マップに無い名前は swatch 非表示で文字だけ残る (壊さない設計)。新しい色を data 側で増やしたら `JAPANESE_COLORS` に追記する。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
