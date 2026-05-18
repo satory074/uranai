@@ -89,6 +89,7 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneCard>` sectio
 
 ### Result presentation layer
 
+- `src/components/SummaryCard.tsx` — 結果ページの先頭、最初の `<FortuneGroupHeader>` の手前に出る「今日の空気」カード。`score` を持つ占い (現状 `omikuji` / `astrology` / `seimei`) の平均を 0–100 で表示し、`KEYWORD_PRIORITY: FortuneId[] = ['astrology', 'omikuji', 'kyusei', 'shichu', 'sanmei', 'seimei']` の順に `deriveHeadline(r, id)[0]` を 3 つだけ採取してチップで並べる。`.surface-card-strong` の上に `style={{ background: 'var(--color-surface-sunken)' }}` でベージュ寄せ。タロットは `tarotFlipped` 前に keyword が undefined になる仕様上、SummaryCard の priority に `tarot-three` を**意図的に入れていない** (めくる前から「過去・現在・未来」が混ざると驚きが減るため)。
 - `src/components/resultDerive.ts` derives the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - **セクションごとの ⭐ 5 段階評価**: `FortuneSection` の optional `rating?: number` (1〜5) が設定されていると、`SectionCard` の title 行に `<RatingStars>` (`FortuneResultView.tsx` 内ローカル) が `⭐️…☆… (N/5)` 形式で描画される。`aria-label="5段階中N"` 付き。値は engine 側で `pickWeighted(rng, RATING_WEIGHTS)` で決定論的に抽選。現状 astrology の 4 セクションだけで使用。タロットの `sectionPrefix` (左挿しカード) と層が分かれているため共存可能。
 - `<FortuneCard>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
@@ -145,11 +146,20 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 
 ### Other component caveats
 
+- `src/components/HeroDecoration.tsx` は **フォーム画面のヒーロー右上に出る装飾 SVG** (月相 + 散らした 7 つの小さな星)。`text-gold` で塗り、月のグループ `<g className="float-soft">` にだけアニメを当てて 6 秒周期でゆらゆらする。常に `aria-hidden="true"` + `role="presentation"`。`prefers-reduced-motion: reduce` で `float-soft` は止まる (`src/index.css` の reduced-motion ブロックに含まれている)。Home.tsx 側で mobile は `w-32 h-32`、md+ は `w-56 h-56` を 2 個並べる (mobile 用 / desktop 用) `absolute` 配置で出し分ける。新しい装飾 SVG を足すならここを参考に。
+- `src/pages/Home.tsx` には **3 つの inline helper コンポーネント**が末尾 (`function Home()` の外側) に置かれている。Home.tsx 専用なので別ファイルに切り出していない:
+  - `Field({ label, children })` — フォーム入力 1 つ分の `<label>` ラッパ。年月日 / 姓名どちらにも使う。
+  - `StepLabel({ index, title, required?, optional? })` — フォームの「STEP 01 ─ 生年月日 *」「STEP 02 ─ 姓名 (任意)」見出し。`type-eyebrow` + `font-serif` の組合せ。
+  - `FortuneGroupHeader({ eyebrow, title, description, icon })` — 結果ページの「TODAY'S FLOW / 🌙 今日の運勢」「YOUR PROFILE / 🌳 あなたのタイプ」セクションヘッダ。`<FortuneCard>` 群を 2 グループに分割するために 2 回呼ばれる。
+
+  新しい helper を足すなら同じ末尾に並べる。複数ファイルから使うようになったら初めて `src/components/` へ昇格させる。
+- フォーム末尾には「結果に並ぶ占い」chip list があり、`FORTUNES` を `map` して 7 占いの emoji + displayName を 1 行で並べる。**`FORTUNES` を増減すると自動追従するので、ここは下の「ハードコード 3 か所」の例外**。
 - `src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. Files remain in the tree; do not import them by mistake.
-- 占いの **件数と名前** は 3 か所にハードコードされており、占いを増減した際は `FORTUNES` カタログ (`src/fortunes/types.ts`) と合わせて全て手動更新する必要がある:
-  1. `src/components/Layout.tsx` のフッター文 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・…」) — `{FORTUNES.length}` で件数だけは自動追従するが、**占い名の列挙部分 (「おみくじ・タロット・…」) は手動更新**。
-  2. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) — 数字も文言も手動。
-  3. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」) — 同上、手動。
+- 占いの **件数 (数字)** は 2 か所にハードコードされており、占いを増減した際は `FORTUNES` カタログ (`src/fortunes/types.ts`) と合わせて手動更新する必要がある:
+  1. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) — 数字も文言も手動。
+  2. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」) — 同上、手動。
+
+  なお `src/components/Layout.tsx` のフッターと Home.tsx のフォーム末尾「結果に並ぶ占い」chip list、フッター末尾「全 N 種類の占い」表記はすべて `FORTUNES.map` / `FORTUNES.length` で**自動追従**するので手動更新不要。
 
 ### Shared utilities (`src/lib/`)
 
