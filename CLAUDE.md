@@ -40,7 +40,7 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 | `omikuji`     | 姓名 (任意; 無ければ `'guest'` シード) | 6 ランク × 5 運勢のおみくじ |
 | `tarot-three` | 生年月日 + 姓名 (シード)   | 過去 / 現在 / 未来 の 3 セクション (`drawn[]` も返す) |
 | `seimei`      | 姓 + 名 (両方必要)         | 五格 (天/人/地/外/総) + 簡易解釈 |
-| `astrology`   | 生年月日 + 今日の日付       | 太陽星座をラベルとして、今日のテーマ (summary) + 4 つの運勢 (全体/恋愛/仕事/健康) を日替わりで合成。各セクションには 1〜5 の ⭐ 評価が付き、結果の上に 12 星座すべての合計点ランキング (兼サインピッカー) が並ぶ。性格判断パートは持たない |
+| `astrology`   | 生年月日 + 今日の日付       | 太陽星座ラベル + 今日のテーマ + 4 運勢 (全体/恋愛/仕事/健康) × 各 ⭐ 1〜5 評価 + 12 星座ランキング兼ピッカー (詳細は下の **Astrology UX** 節)。性格判断パートは持たない |
 | `kyusei`      | 生年月日 (立春切替)        | 本命星 1 セクション         |
 | `shichu`      | 生年月日                   | 日干タイプ 1 セクション     |
 | `sanmei`      | 生年月日 (立春切替)        | 独自10星 1 セクション       |
@@ -75,7 +75,6 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 - `src/components/resultDerive.ts` derives the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - **セクションごとの ⭐ 5 段階評価**: `FortuneSection` の optional `rating?: number` (1〜5) が設定されていると、`SectionCard` の title 行に `<RatingStars>` (`FortuneResultView.tsx` 内ローカル) が `⭐️…☆… (N/5)` 形式で描画される。`aria-label="5段階中N"` 付き。値は engine 側で `pickWeighted(rng, RATING_WEIGHTS)` で決定論的に抽選。現状 astrology の 4 セクションだけで使用。タロットの `sectionPrefix` (左挿しカード) と層が分かれているため共存可能。
-- **astrology のランキング兼サインピッカー** (`src/components/AstrologyRanking.tsx`): `dailyRanking()` (`astrology/engine.ts`) が `SIGNS` の 12 星座すべてに対し `readSunSign(_, {signOverride})` を擬似実行 → `sections[].rating` の合計 (4〜20) で降順ソート → 12 星座を 1〜12 位で並べたランキング。`<FortuneBlock>` の中、`<FortuneResultView>` の手前に常時表示。各セルは button で、タップすると `Home.tsx` の `astroSelectedAlias` state が更新され、astrology 結果がその星座のもの (`signOverride` 指定) に切り替わる。自分の natal 星座は ★ マーク。再度 natal 星座をタップすると override 解除 (= 元に戻る)。フォーム再 submit で `astroSelectedAlias` は `null` リセット。signOverride 指定時は subtitle から「生年月日」表示が消える (本来の星座と異なる星座を覗いている文脈なので)。
 - `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
 - **ラッキーカラーには色見本を出す**: `<FortuneResultView>` の `Highlight` と `<NarrativeCard>` の `MiniHighlight` は `label === 'ラッキーカラー'` の枠だけ `<ColorSwatch name={value} />` (`src/components/ColorSwatch.tsx`) を文字の左に並べる。和色名 → hex のマップは `src/lib/japaneseColors.ts` (`JAPANESE_COLORS` + `resolveColor`)。複合色 (`'白・銀'` 等) は `・` で分割して半々のグラデーション円を描く。マップに無い名前は swatch 非表示で文字だけ残る (壊さない設計)。新しい色を data 側で増やしたら `JAPANESE_COLORS` に追記する。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
@@ -84,6 +83,17 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 - **結果テキストはカード単位で gating** (`Home.tsx` の派生 `gatedTarotResult`): 未めくりセクションは `title` が `TAROT_POSITIONS[i]` だけ (例: 「過去」)、`body` が `'カードをタップして結果を見る'` のヒント文に置換。めくれたセクションだけ engine の本来の `title` (「過去 — 教皇（逆）」) + `body` (キーワード + 解釈) に切り替わる。
 - **subtitle と headline も連動して gating**: `subtitle` (3 枚並列の "教皇逆 / 力 / 運命の輪") は 3 枚すべてめくれるまで `undefined` (`<FortuneResultView>` で非表示)。`headline` (キーワードチップ群) は `deriveHeadline` が `sections[0].body` から取るため 1 枚目がめくれるまで `undefined` でチップ非表示。
 - **`tarotFlipped` のリセットはフォーム `onSubmit` で**: `setTarotFlipped([false, false, false])` を `setSubmitted(true)` の手前で呼ぶ。`useEffect` 内での setState は `react-hooks/set-state-in-effect` lint ルールで禁止されているため。`aboutExpanded` のリセット (`setAboutExpanded({})`) も同じ場所で並べて呼ぶ。
+
+### Astrology UX (ranking + sign picker)
+
+astrology だけが持つ「12 星座ランキング兼サインピッカー」の構造は以下:
+
+- **`dailyRanking()`** (`src/fortunes/astrology/engine.ts`): `SIGNS` の 12 星座すべてに対して `readSunSign(_, { signOverride })` を擬似実行 → `sections[].rating` (1〜5) の合計 (4〜20) で降順ソート → `RankingEntry[]` (`{ sign, total, rank }`) を返す。同点は `SIGNS` の宣言順 (= 牡羊 → 魚) で先勝ち。
+- **`<AstrologyRanking>`** (`src/components/AstrologyRanking.tsx`): 12 セルの button グリッド (sm 以上で 12 列、モバイルは 6 列 × 2 行)。各セル: 順位・symbol・略称・合計 (N/20)・★ (natal sign)。選択中は plum 背景でハイライト。`aria-pressed` 付き。
+- **配置**: `Home.tsx` 内、`<FortuneBlock id="fortune-astrology">` の直下、`<FortuneResultView>` の手前に常時表示。
+- **state**: `Home.tsx` の `astroSelectedAlias: string | null`。タップで `setAstroSelectedAlias(alias)`、natal 星座を再タップすると `null` に戻して override 解除。フォーム再 submit でも `null` リセット (他の state リセット群と並べて `onSubmit` ハンドラ内で実行)。
+- **`signOverride` の挙動**: `readSunSign` の第 2 引数で `{ signOverride: Sign }` を渡すと、その星座の今日の運勢を計算する。指定時は subtitle から「`${year}年${month}月${day}日生まれ`」の prefix が消える (本来の星座と異なる星座を覗いている文脈なので、生年月日表示は混乱を招くため)。
+- **seed の独立性**: 各星座の rating は `astrology|${sign.alias}|${moonName}|${todayIso}` を seed にして決定論的に算出されるので、ランキングと結果表示は常に整合する。
 
 ### About panels (占いの方法 + 要素一覧)
 
@@ -121,13 +131,13 @@ To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` secti
 
 - `src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. Files remain in the tree; do not import them by mistake.
 - 占いの **件数と名前** は 3 か所にハードコードされており、占いを増減した際は `FORTUNES` カタログ (`src/fortunes/types.ts`) と合わせて全て手動更新する必要がある:
-  1. `src/components/Layout.tsx` のフッター文 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・…」) — 件数 `{FORTUNES.length}` 部分のみ自動追従。
-  2. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」)。
-  3. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」)。
+  1. `src/components/Layout.tsx` のフッター文 (「7種類の占いをお楽しみいただけます — おみくじ・タロット（3枚引き）・…」) — `{FORTUNES.length}` で件数だけは自動追従するが、**占い名の列挙部分 (「おみくじ・タロット・…」) は手動更新**。
+  2. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) — 数字も文言も手動。
+  3. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」) — 同上、手動。
 
 ### Shared utilities (`src/lib/`)
 
-- `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle).
+- `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle). 同ファイルの `pick(rng, list)` (一様抽選) / `pickWeighted(rng, [{value, weight}])` (加重抽選 — omikuji の rank / astrology の ⭐ 評価で使用) / `shuffle(rng, list)` (Fisher-Yates) / `todayIsoDate()` (ローカル日付 ISO 文字列) も一緒に提供している。
 - `julianDay.ts` — Gregorian → Julian Day Number (Fliegel–Van Flandern), then `dayStemBranch` / `yearStemBranch` derive the 60-cycle index. `risshunYear` applies the **Feb 4 cutoff** (Jan 1 – Feb 3 belongs to the previous year). All Eastern fortunes (`kyusei`, `shichu`, `sanmei`) must respect this cutoff.
 - `moonSign.ts` — 月の黄経を簡易近似で計算 (`gregorianToJulianDay` を起点に Meeus 主要項のみ採用) → 30° で切って星座インデックス・名前 (`MoonSignName`) を返す。`astrology` engine の「今日の月の星座」判定に使用。出力は 12 星座の和名で `astrology/signs.ts` の `Sign.name` と一致。
 - `kanjiStrokes.ts` — hiragana・katakana table と `strokeOf` / `strokesOfText` のロジック。漢字本体は `kanjiStrokes.data.ts` から import。Used only by `seimei`. Unknown chars are surfaced to the UI as "画数不明" rather than silently treated as 0.
@@ -168,7 +178,7 @@ omikuji の `data.ts` はこの規約の対象外。**2 セグメント合成構
 
 ## Copyright / trademark constraints (load-bearing)
 
-The project's selling point is that **all interpretive text is original** and avoids registered/流派-specific names. When editing data files:
+The project's selling point is that **all interpretive text is original** and avoids registered/流派-specific names. より詳しい do-not list と voice & tone のガイドは [`docs/TONE_AND_MANNER.md`](docs/TONE_AND_MANNER.md) も参照。When editing data files:
 
 - **Never** use the 算命学 十大主星 names: `貫索星 / 石門星 / 鳳閣星 / 調舒星 / 禄存星 / 司禄星 / 車騎星 / 牽牛星 / 龍高星 / 玉堂星`. The `sanmei` fortune uses a parallel-but-disjoint set: `樹星 / 苑星 / 暁星 / 灯星 / 巌星 / 野星 / 鋒星 / 玉星 / 河星 / 露星`.
 - Tarot card images are inline SVG with abstract motifs in `src/components/TarotCard.tsx`. Do not copy Rider-Waite or any other published deck's composition, color palette, or symbolism.
