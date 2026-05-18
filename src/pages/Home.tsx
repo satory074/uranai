@@ -2,9 +2,11 @@ import { useState, type ReactNode } from 'react';
 import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
 import { FortuneAboutPanel } from '../components/FortuneAboutPanel';
+import { AstrologyRanking } from '../components/AstrologyRanking';
 import { deriveHeadline } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
-import { readSunSign } from '../fortunes/astrology/engine';
+import { readSunSign, dailyRanking } from '../fortunes/astrology/engine';
+import { SIGNS, findSign } from '../fortunes/astrology/signs';
 import { readKyusei } from '../fortunes/kyusei/engine';
 import { readSanmei } from '../fortunes/sanmei/engine';
 import { readShichu } from '../fortunes/shichu/engine';
@@ -29,6 +31,7 @@ export function Home() {
   const [expanded, setExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
   const [aboutExpanded, setAboutExpanded] = useState<Partial<Record<FortuneId, boolean>>>({});
   const [tarotFlipped, setTarotFlipped] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  const [astroSelectedAlias, setAstroSelectedAlias] = useState<string | null>(null);
 
   const toggle = (id: FortuneId) =>
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -55,6 +58,7 @@ export function Home() {
             e.preventDefault();
             setTarotFlipped([false, false, false]);
             setAboutExpanded({});
+            setAstroSelectedAlias(null);
             setSubmitted(true);
           }}
         >
@@ -144,7 +148,15 @@ export function Home() {
   const omikujiResult = drawOmikuji(hasName ? { name: fullName } : {});
   const tarotThree = drawThree({ seedHint: `${seedHint}|three` });
   const seimeiResult = hasName ? readSeimei({ sei: trimmedSei, mei: trimmedMei }) : null;
-  const astrologyResult = readSunSign(birthDate);
+  const natalSign = findSign(month, day);
+  const selectedSign = astroSelectedAlias
+    ? SIGNS.find((s) => s.alias === astroSelectedAlias) ?? null
+    : null;
+  const astrologyResult = readSunSign(
+    birthDate,
+    selectedSign ? { signOverride: selectedSign } : undefined,
+  );
+  const astrologyRanking = dailyRanking(birthDate);
   const kyuseiResult = readKyusei(birthDate);
   const shichuResult = readShichu(birthDate);
   const sanmeiResult = readSanmei(birthDate);
@@ -262,6 +274,14 @@ export function Home() {
         aboutExpanded={!!aboutExpanded['astrology']}
         onAboutToggle={() => toggleAbout('astrology')}
       >
+        <AstrologyRanking
+          ranking={astrologyRanking}
+          natalAlias={natalSign.alias}
+          selectedAlias={selectedSign?.alias ?? natalSign.alias}
+          onSelect={(alias) =>
+            setAstroSelectedAlias(alias === natalSign.alias ? null : alias)
+          }
+        />
         <FortuneResultView
           id="result-astrology"
           result={astrologyResult}
