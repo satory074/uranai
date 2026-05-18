@@ -15,6 +15,8 @@ npm run lint     # ESLint flat config (eslint.config.js)
 
 There are no automated tests. Verify changes by running `npm run build`, then exercising each affected fortune via the unified Home form in the browser.
 
+Node 20.x (`.github/workflows/deploy.yml` の `actions/setup-node` 指定が真実の所在；`package.json` に `engines` 指定はない)。
+
 ## Deploy pipeline
 
 Pushing to `main` triggers `.github/workflows/deploy.yml` (build → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`) and publishes to https://satory074.github.io/uranai/.
@@ -32,6 +34,8 @@ Each fortune is a self-contained module under `src/fortunes/<id>/`:
 
 - `data.ts` / `cards.ts` / `signs.ts` / `stems.ts` / `stars.ts` — static data (types, templates, lookup tables)
 - `engine.ts` — pure function `(input) => FortuneResult` (the shared shape from `src/fortunes/types.ts`)
+
+ただしタロットだけ `id='tarot-three'` に対してディレクトリ名は `tarot/` (歴史的経緯)。他の 6 占いは id とディレクトリ名が一致。`grep tarot-three src/fortunes/` で何も出ないので注意。
 
 ### Fortune catalog (id → 入力 → 出力構造)
 
@@ -99,7 +103,7 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 
 各 `<FortuneBlock>` には「占いについて」トグルがあり、押すと `<FortuneAboutPanel id={fortuneId} />` (`src/components/FortuneAboutPanel.tsx`) が結果の上に展開される。中身は 2 セクション:
 
-1. **占いの背景** — 6 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake` / `whenItChanges`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。最後の `whenItChanges` は「同じ人がもう一度占うと？」というラベルで、入力が変わらない限り結果が変わらない理由を占いごとに固有の表現で説明する (omikuji だけは「日付が変わるたびに変わる」と書く)。
+1. **占いの背景** — 6 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake` / `whenItChanges`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。最後の `whenItChanges` は「同じ人がもう一度占うと？」というラベルで、占いごとに「結果が変わる条件」を固有の表現で説明する。日替わりグループ (`omikuji` / `tarot-three` / `astrology`) は「日付が変わると新しい結果」、生年月日固定グループ (`seimei` / `kyusei` / `shichu` / `sanmei`) は「同じ入力なら一生同じ」と書き分ける。
 2. **ぜんぶの要素** — 占いごとに見た目が違うため、占い別カタログコンポーネントに分離 (`src/components/elementCatalogs/`):
    - `OmikujiCatalog.tsx` — 6 ランクの表 (rank / 出現比率 / スコア帯)
    - `TarotCatalog.tsx` — 22 枚の大アルカナを 1〜2 列グリッドで。静的 `<TarotCatalogCard>` を内包 (`<TarotCard>` は flip インタラクション前提なので再利用しない)。SVG モチーフは `src/components/tarotMotifs.ts` に切り出した `MOTIFS` map を共有
@@ -137,7 +141,7 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 
 ### Shared utilities (`src/lib/`)
 
-- `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。Used by `omikuji` (date+name seed for "same day = same result") and `tarot` (per-draw seed for the shuffle). 同ファイルの `pick(rng, list)` (一様抽選) / `pickWeighted(rng, [{value, weight}])` (加重抽選 — omikuji の rank / astrology の ⭐ 評価で使用) / `shuffle(rng, list)` (Fisher-Yates) / `todayIsoDate()` (ローカル日付 ISO 文字列) も一緒に提供している。
+- `seedRandom.ts` — `createRng(seed)` returns a deterministic **64-bit** stream (FNV-1a 64-bit hash → splitmix64). Output entropy ceiling is 2^64 ≈ 1.8×10^19 ── 32-bit RNG だと「同じハッシュに偶然落ちる別入力」の頻度がボトルネックになるので、おみくじの出力空間 (~6.6×10^13) を活かすために 64-bit にしてある。日替わり 3 占いすべてが利用: `omikuji` (`omikuji|${today}|${name}`) / `tarot-three` (`tarot3|${today}|${birth+name}`) / `astrology` (`astrology|${alias}|${moonName}|${todayIso}`)。共通して「同じ入力 × 同じ日 → 同じ結果」の決定性を担保。同ファイルの `pick(rng, list)` (一様抽選) / `pickWeighted(rng, [{value, weight}])` (加重抽選 — omikuji の rank / astrology の ⭐ 評価で使用) / `shuffle(rng, list)` (Fisher-Yates) / `todayIsoDate()` (ローカル日付 ISO 文字列) も一緒に提供している。
 - `julianDay.ts` — Gregorian → Julian Day Number (Fliegel–Van Flandern), then `dayStemBranch` / `yearStemBranch` derive the 60-cycle index. `risshunYear` applies the **Feb 4 cutoff** (Jan 1 – Feb 3 belongs to the previous year). All Eastern fortunes (`kyusei`, `shichu`, `sanmei`) must respect this cutoff.
 - `moonSign.ts` — 月の黄経を簡易近似で計算 (`gregorianToJulianDay` を起点に Meeus 主要項のみ採用) → 30° で切って星座インデックス・名前 (`MoonSignName`) を返す。`astrology` engine の「今日の月の星座」判定に使用。出力は 12 星座の和名で `astrology/signs.ts` の `Sign.name` と一致。
 - `kanjiStrokes.ts` — hiragana・katakana table と `strokeOf` / `strokesOfText` のロジック。漢字本体は `kanjiStrokes.data.ts` から import。Used only by `seimei`. Unknown chars are surfaced to the UI as "画数不明" rather than silently treated as 0.
