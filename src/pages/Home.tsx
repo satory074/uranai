@@ -235,6 +235,13 @@ export function Home() {
         </p>
       )}
 
+      <FortuneGroupHeader
+        eyebrow="TODAY'S FLOW"
+        title="今日の運勢"
+        description="日付が変わると、新しい結果に引き直されます。"
+        icon="🌙"
+      />
+
       <FortuneCard
         id="fortune-omikuji"
         info={FORTUNE_MAP['omikuji']}
@@ -279,23 +286,6 @@ export function Home() {
         />
       </FortuneCard>
 
-      {seimeiResult && (
-        <FortuneCard
-          id="fortune-seimei"
-          info={FORTUNE_MAP['seimei']}
-          expanded={!!expanded['seimei']}
-          onToggle={() => toggle('seimei')}
-          aboutExpanded={!!aboutExpanded['seimei']}
-          onAboutToggle={() => toggleAbout('seimei')}
-        >
-          <FortuneResultView
-            id="result-seimei"
-            result={seimeiResult}
-            headline={headlineFor('seimei', seimeiResult)}
-          />
-        </FortuneCard>
-      )}
-
       <FortuneCard
         id="fortune-astrology"
         info={FORTUNE_MAP['astrology']}
@@ -318,6 +308,30 @@ export function Home() {
           headline={headlineFor('astrology', astrologyResult)}
         />
       </FortuneCard>
+
+      <FortuneGroupHeader
+        eyebrow="YOUR PROFILE"
+        title="あなたのタイプ"
+        description="生年月日から決まる、変わらないあなたの素材。"
+        icon="🌳"
+      />
+
+      {seimeiResult && (
+        <FortuneCard
+          id="fortune-seimei"
+          info={FORTUNE_MAP['seimei']}
+          expanded={!!expanded['seimei']}
+          onToggle={() => toggle('seimei')}
+          aboutExpanded={!!aboutExpanded['seimei']}
+          onAboutToggle={() => toggleAbout('seimei')}
+        >
+          <FortuneResultView
+            id="result-seimei"
+            result={seimeiResult}
+            headline={headlineFor('seimei', seimeiResult)}
+          />
+        </FortuneCard>
+      )}
 
       <FortuneCard
         id="fortune-kyusei"
@@ -404,5 +418,30 @@ function StepLabel({
       {required && <span className="text-plum text-sm" aria-label="必須">*</span>}
       {optional && <span className="text-xs text-ink/55">（任意）</span>}
     </div>
+  );
+}
+
+function FortuneGroupHeader({
+  eyebrow,
+  title,
+  description,
+  icon,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  icon: string;
+}) {
+  return (
+    <header className="mb-5 mt-4 md:mt-6 pl-1">
+      <p className="type-eyebrow mb-2">{eyebrow}</p>
+      <div className="flex items-baseline gap-3 mb-1.5">
+        <span className="text-xl" aria-hidden>
+          {icon}
+        </span>
+        <h2 className="font-serif text-xl md:text-2xl text-ink leading-tight">{title}</h2>
+      </div>
+      <p className="text-sm text-ink/65 leading-relaxed pl-8">{description}</p>
+    </header>
   );
 }

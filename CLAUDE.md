@@ -67,6 +67,12 @@ type FortuneResult = {
 
 `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
 
+結果ページの 7 ブロックは `<FortuneGroupHeader>` (Home.tsx 内ローカル) で **2 セクションに分割**して描画する:
+- **「今日の運勢」(TODAY'S FLOW)** — `omikuji` → `tarot-three` → `astrology` の順 (日付が変わると引き直される 3 占い)
+- **「あなたのタイプ」(YOUR PROFILE)** — `seimei` (条件付き) → `kyusei` → `shichu` → `sanmei` の順 (生年月日から決まる固定 4 占い)
+
+この区切りは `methodInfo.ts` の `whenItChanges` フィールドと**同じ意味分類**: 「日付が変わると新しい結果」 vs 「同じ入力なら一生同じ」。新しい占いを足すときは、どちらのセクションに属するかを `whenItChanges` の文言と合わせて判断し、Home.tsx の対応するセクション内に `<FortuneCard>` を追加する。astrology が `tarot-three` の後に来ているのはこの再構成によるもので、`FORTUNES` カタログの宣言順 (omikuji → tarot → seimei → astrology → kyusei → shichu → sanmei) とは**意図的にズレている**。
+
 各占いブロックは `<FortuneCard>` (`src/components/FortuneCard.tsx`) でラップされる。これは旧 `<FortuneBlock>` (Home.tsx 内ローカル) を 2026-05 のデザイン磨き込みで独立コンポーネントへ切り出したもの。`<FortuneCard>` は「閉じた本」のメタファで:
 - 外枠は `.surface-card-strong` (opaque white + `--color-border-hairline` + `--shadow-pop`)
 - accent gradient はカードの**左帯** (`w-1.5 bg-gradient-to-b ${info.accent}`)。旧実装の `h-1.5` 上帯は廃止。
