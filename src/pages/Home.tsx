@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
-import { FortuneAboutPanel } from '../components/FortuneAboutPanel';
 import { AstrologyRanking } from '../components/AstrologyRanking';
+import { FortuneCard } from '../components/FortuneCard';
+import { HeroDecoration } from '../components/HeroDecoration';
+import { SummaryCard } from '../components/SummaryCard';
 import { deriveHeadline } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
 import { readSunSign, dailyRanking } from '../fortunes/astrology/engine';
@@ -40,20 +42,24 @@ export function Home() {
 
   if (!submitted) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
-        <section className="text-center mb-10">
-          <p className="text-xs tracking-[0.4em] text-plum mb-3">URANAI HYAKKA</p>
-          <h1 className="font-serif text-4xl md:text-5xl text-ink mb-4 leading-tight">
-            7つの占いを、<br className="md:hidden" />ひと所で。
-          </h1>
-          <p className="text-sm md:text-base text-ink/70 max-w-xl mx-auto">
-            生年月日と姓名を入力すると、おみくじから西洋占星術・命式タイプ診断・タロットまで、
-            すべての占い結果がこのページに並びます。
-          </p>
+      <div className="max-w-3xl mx-auto px-4 py-12 md:py-20">
+        <section className="relative mb-10 md:mb-14">
+          <HeroDecoration className="hidden md:block absolute -top-6 -right-2 w-56 h-56 pointer-events-none" />
+          <HeroDecoration className="md:hidden absolute -top-2 -right-2 w-32 h-32 opacity-80 pointer-events-none" />
+          <div className="relative">
+            <p className="type-eyebrow mb-4">URANAI HYAKKA</p>
+            <h1 className="type-display text-ink mb-5">
+              7つの占いを、<br />ひと所で。
+            </h1>
+            <p className="text-base md:text-lg text-ink/75 max-w-lg leading-relaxed">
+              生年月日と姓名を入力すると、おみくじから西洋占星術・命式タイプ診断・タロットまで、
+              すべての占い結果がこのページに並びます。
+            </p>
+          </div>
         </section>
 
         <form
-          className="bg-white/80 rounded-2xl border border-amber-900/10 p-5 md:p-6 shadow-sm"
+          className="surface-card-strong p-6 md:p-10"
           onSubmit={(e) => {
             e.preventDefault();
             setTarotFlipped([false, false, false]);
@@ -62,10 +68,8 @@ export function Home() {
             setSubmitted(true);
           }}
         >
-          <div className="text-sm text-ink/70 mb-3">
-            生年月日 <span className="text-plum">*</span>
-          </div>
-          <div className="flex flex-wrap items-end gap-3 mb-6">
+          <StepLabel index="01" title="生年月日" required />
+          <div className="flex flex-wrap items-end gap-3 md:gap-4 mb-8">
             <Field label="年">
               <input
                 type="number"
@@ -73,7 +77,7 @@ export function Home() {
                 max="2100"
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
-                className="w-24 px-3 py-2 rounded border border-amber-900/20 bg-white"
+                className="w-28 md:w-32 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
             <Field label="月">
@@ -83,7 +87,7 @@ export function Home() {
                 max="12"
                 value={month}
                 onChange={(e) => setMonth(Number(e.target.value))}
-                className="w-20 px-3 py-2 rounded border border-amber-900/20 bg-white"
+                className="w-20 md:w-24 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
             <Field label="日">
@@ -93,22 +97,20 @@ export function Home() {
                 max="31"
                 value={day}
                 onChange={(e) => setDay(Number(e.target.value))}
-                className="w-20 px-3 py-2 rounded border border-amber-900/20 bg-white"
+                className="w-20 md:w-24 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
           </div>
 
-          <div className="text-sm text-ink/70 mb-3">
-            姓名 <span className="text-ink/50 text-xs">（任意）</span>
-          </div>
-          <div className="flex flex-wrap items-end gap-3 mb-2">
+          <StepLabel index="02" title="姓名" optional />
+          <div className="flex flex-wrap items-end gap-3 md:gap-4 mb-2">
             <Field label="姓">
               <input
                 type="text"
                 value={sei}
                 onChange={(e) => setSei(e.target.value)}
                 placeholder="山田"
-                className="w-32 px-3 py-2 rounded border border-amber-900/20 bg-white"
+                className="w-32 md:w-36 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif focus:border-plum focus:outline-none"
               />
             </Field>
             <Field label="名">
@@ -117,21 +119,37 @@ export function Home() {
                 value={mei}
                 onChange={(e) => setMei(e.target.value)}
                 placeholder="花子"
-                className="w-32 px-3 py-2 rounded border border-amber-900/20 bg-white"
+                className="w-32 md:w-36 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif focus:border-plum focus:outline-none"
               />
             </Field>
           </div>
-          <p className="text-xs text-ink/50 mb-6">
+          <p className="text-sm text-ink/70 mb-8">
             姓と名を両方入力すると、姓名判断も結果に追加されます。
           </p>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-8 py-2 rounded-full bg-plum text-paper hover:bg-rose-800 transition shadow-sm"
-            >
-              占う
-            </button>
+          <button
+            type="submit"
+            className="reveal-button btn-plum w-full h-14 rounded-2xl font-serif text-lg shadow-card hover:shadow-pop active:scale-[0.98] inline-flex items-center justify-center gap-3 cursor-pointer"
+          >
+            <span>占う</span>
+            <span aria-hidden className="text-gold text-base">✦</span>
+          </button>
+
+          <div className="mt-8 pt-6 border-t border-border-hairline">
+            <p className="type-eyebrow mb-3">結果に並ぶ占い</p>
+            <ul className="flex flex-wrap gap-x-3 gap-y-2 text-sm text-ink/75">
+              {FORTUNES.map((f, i) => (
+                <li key={f.id} className="inline-flex items-center gap-1.5">
+                  <span aria-hidden>{f.emoji}</span>
+                  <span>{f.displayName}</span>
+                  {i < FORTUNES.length - 1 && (
+                    <span className="text-ink/30 ml-1" aria-hidden>
+                      ・
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         </form>
       </div>
@@ -180,32 +198,44 @@ export function Home() {
 
   const headlineFor = (id: FortuneId, result: FortuneResult) => deriveHeadline(result, id);
 
+  const summaryResults: { id: FortuneId; result: FortuneResult }[] = [
+    { id: 'omikuji', result: omikujiResult },
+    { id: 'tarot-three', result: tarotThree.result },
+    { id: 'astrology', result: astrologyResult },
+    ...(seimeiResult ? [{ id: 'seimei' as FortuneId, result: seimeiResult }] : []),
+    { id: 'kyusei', result: kyuseiResult },
+    { id: 'shichu', result: shichuResult },
+    { id: 'sanmei', result: sanmeiResult },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
-      <header className="flex flex-wrap items-baseline justify-between gap-3 mb-8 pb-4 border-b border-amber-900/10">
+    <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 mb-6 pb-4 border-b border-border-hairline">
         <div>
-          <p className="text-xs tracking-[0.4em] text-plum mb-1">YOUR FORTUNES</p>
-          <h1 className="font-serif text-2xl md:text-3xl text-ink">
+          <p className="type-eyebrow mb-2">YOUR FORTUNES</p>
+          <h1 className="type-headline text-ink">
             {year}年{month}月{day}日
-            {hasName && <span className="text-base ml-2 text-ink/70">／ {fullName}</span>}
+            {hasName && <span className="text-base ml-2 text-ink/70 font-sans">／ {fullName}</span>}
           </h1>
         </div>
         <button
           type="button"
           onClick={() => setSubmitted(false)}
-          className="text-sm text-plum hover:underline"
+          className="text-sm text-plum hover:underline cursor-pointer"
         >
           ← 入力をやり直す
         </button>
       </header>
 
+      <SummaryCard items={summaryResults} headlineFor={headlineFor} />
+
       {!hasName && (
-        <p className="text-xs text-ink/60 bg-mist/60 rounded-lg px-4 py-3 mb-6">
+        <p className="text-sm text-ink/70 bg-surface-sunken rounded-lg px-4 py-3 mb-6 border border-border-hairline">
           姓名を入力すると、姓名判断も表示されます。
         </p>
       )}
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-omikuji"
         info={FORTUNE_MAP['omikuji']}
         expanded={!!expanded['omikuji']}
@@ -218,9 +248,9 @@ export function Home() {
           result={omikujiResult}
           headline={headlineFor('omikuji', omikujiResult)}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-tarot-three"
         info={FORTUNE_MAP['tarot-three']}
         expanded={!!expanded['tarot-three']}
@@ -247,10 +277,10 @@ export function Home() {
             ) : null;
           }}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
       {seimeiResult && (
-        <FortuneBlock
+        <FortuneCard
           id="fortune-seimei"
           info={FORTUNE_MAP['seimei']}
           expanded={!!expanded['seimei']}
@@ -263,10 +293,10 @@ export function Home() {
             result={seimeiResult}
             headline={headlineFor('seimei', seimeiResult)}
           />
-        </FortuneBlock>
+        </FortuneCard>
       )}
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-astrology"
         info={FORTUNE_MAP['astrology']}
         expanded={!!expanded['astrology']}
@@ -287,9 +317,9 @@ export function Home() {
           result={astrologyResult}
           headline={headlineFor('astrology', astrologyResult)}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-kyusei"
         info={FORTUNE_MAP['kyusei']}
         expanded={!!expanded['kyusei']}
@@ -302,9 +332,9 @@ export function Home() {
           result={kyuseiResult}
           headline={headlineFor('kyusei', kyuseiResult)}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-shichu"
         info={FORTUNE_MAP['shichu']}
         expanded={!!expanded['shichu']}
@@ -317,9 +347,9 @@ export function Home() {
           result={shichuResult}
           headline={headlineFor('shichu', shichuResult)}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
-      <FortuneBlock
+      <FortuneCard
         id="fortune-sanmei"
         info={FORTUNE_MAP['sanmei']}
         expanded={!!expanded['sanmei']}
@@ -332,13 +362,13 @@ export function Home() {
           result={sanmeiResult}
           headline={headlineFor('sanmei', sanmeiResult)}
         />
-      </FortuneBlock>
+      </FortuneCard>
 
-      <div className="flex justify-center mt-10">
+      <div className="flex justify-center mt-12">
         <button
           type="button"
           onClick={() => setSubmitted(false)}
-          className="px-8 py-2 rounded-full bg-plum text-paper hover:bg-rose-800 transition shadow-sm"
+          className="btn-plum px-10 h-12 rounded-full font-serif text-base shadow-card hover:shadow-pop cursor-pointer"
         >
           入力をやり直す
         </button>
@@ -349,73 +379,30 @@ export function Home() {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs text-ink/60">{label}</span>
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs text-ink/65 tracking-wide">{label}</span>
       {children}
     </label>
   );
 }
 
-function FortuneBlock({
-  id,
-  info,
-  expanded,
-  onToggle,
-  aboutExpanded,
-  onAboutToggle,
-  children,
+function StepLabel({
+  index,
+  title,
+  required,
+  optional,
 }: {
-  id: string;
-  info: FortuneInfo;
-  expanded: boolean;
-  onToggle: () => void;
-  aboutExpanded: boolean;
-  onAboutToggle: () => void;
-  children: ReactNode;
+  index: string;
+  title: string;
+  required?: boolean;
+  optional?: boolean;
 }) {
   return (
-    <section id={id} className="mb-10 scroll-mt-6">
-      <div className={`h-1.5 rounded-full bg-gradient-to-r ${info.accent} mb-4`} />
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl" aria-hidden>{info.emoji}</span>
-          <div className="min-w-0">
-            <h2 className="font-serif text-lg text-ink leading-tight truncate">{info.displayName}</h2>
-            <p className="text-[11px] text-ink/50 mt-0.5">{info.traditionalName}</p>
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onAboutToggle}
-            aria-expanded={aboutExpanded}
-            aria-controls={`${id}-about`}
-            className="reveal-button text-xs px-3 py-1.5 rounded-full border border-amber-900/20 text-ink/70 hover:bg-mist cursor-pointer"
-          >
-            {aboutExpanded ? '閉じる' : '占いについて'}
-          </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={expanded}
-            aria-controls={`${id}-body`}
-            className="reveal-button text-sm px-4 py-1.5 rounded-full border border-plum/40 text-plum hover:bg-plum hover:text-paper cursor-pointer"
-          >
-            {expanded ? '閉じる' : '結果を見る'}
-          </button>
-        </div>
-      </div>
-      <p className="text-xs md:text-sm text-ink/70 leading-relaxed mb-3 ml-11">
-        {info.description}
-      </p>
-      {aboutExpanded && (
-        <FortuneAboutPanel id={info.id} panelId={`${id}-about`} />
-      )}
-      {expanded && (
-        <div id={`${id}-body`} className="reveal-block" aria-live="polite">
-          {children}
-        </div>
-      )}
-    </section>
+    <div className="flex items-baseline gap-3 mb-4">
+      <span className="type-eyebrow text-plum/80">STEP {index}</span>
+      <span className="font-serif text-lg text-ink">{title}</span>
+      {required && <span className="text-plum text-sm" aria-label="必須">*</span>}
+      {optional && <span className="text-xs text-ink/55">（任意）</span>}
+    </div>
   );
 }

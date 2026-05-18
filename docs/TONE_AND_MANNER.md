@@ -73,7 +73,7 @@
 | `shichu`      | `from-lime-200 to-green-200`       | 苗                |
 | `sanmei`      | `from-fuchsia-200 to-rose-200`     | 桜紫              |
 
-これらは `<FortuneBlock>` ヘッダーの色帯 (`h-1.5 rounded-full bg-gradient-to-r ${info.accent}`) にしか使いません。本文や他の装飾には使わない。
+これらは `<FortuneCard>` の**左帯** (`w-1.5 bg-gradient-to-b ${info.accent}`) にしか使いません。本文や他の装飾には使わない。(2026-05 まで `h-1.5 rounded-full` の上帯だったが、カード全体を opaque 化したタイミングで左帯に変更)
 
 ### ペア規則 (やってよい / よくない)
 
@@ -103,9 +103,22 @@
 - `font-sans` (ゴシック) が **本文の基本**。ボタン・フォーム・解釈文すべて。
 - `tracking-[0.4em]` (大きな字間) は **短い装飾英字専用**。例: `URANAI HYAKKA`, `YOUR FORTUNES`。日本語に当てない。
 
+### 共有 typography utility (`src/index.css` の `@layer components`)
+
+2026-05 のデザイン磨き込みで導入。`text-2xl md:text-3xl` のような ad-hoc サイズ指定の繰り返しを避けるため、4 つの semantic クラスに集約:
+
+| クラス | 用途 | 内訳 |
+| --- | --- | --- |
+| `.type-display` | ヒーロー h1 | serif, `clamp(2.5rem, 5vw+1rem, 4.5rem)`, line-height 1.05, letter-spacing -0.01em |
+| `.type-headline` | 結果ページ h1 / 中見出し | serif, `clamp(1.5rem, 2vw+0.5rem, 2rem)`, line-height 1.2 |
+| `.type-eyebrow` | URANAI HYAKKA / STEP 01 / CATALOG / 今日の空気 などの英字キャップ | sans, 0.6875rem, letter-spacing 0.4em, uppercase, color: plum |
+| `.type-chip` | 結果ヘッダの keyword chip 等 | sans, 0.6875rem, letter-spacing 0.05em |
+
+新規コードはこの 4 つを優先。`font-serif text-4xl md:text-5xl` のような重複を再実装しないこと。
+
 ### 改行 (`<br />`) の扱い
 
-- ✅ h1 の見栄え調整: 「7つの占いを、<br />ひと所で。」
+- ✅ h1 の見栄え調整: 「7つの占いを、<br />ひと所で。」(ヒーローでは常時 br、`type-display` の clamp サイズが大きすぎて 1 行に収まらないため)
 - ❌ 本文 (`data.ts`) には入れない。改行は段落区切り (`\n\n`) でのみ表現する。
 
 ---
@@ -120,7 +133,7 @@ Tailwind の標準スケール (4px ベース) に乗せる。独自値 (`mt-[13
 | セクション内 (header→body) | `gap-4` `mb-5` `mb-6`     |
 | 主要セクション間            | `mb-10`                   |
 | カード内側パディング        | `p-4` (内部) / `p-6 md:p-8` (主要) |
-| ブロックジャンプ用 margin   | `scroll-mt-6` (`<FortuneBlock>` の anchor 余白) |
+| ブロックジャンプ用 margin   | `scroll-mt-6` (`<FortuneCard>` の anchor 余白) |
 
 ---
 
@@ -134,7 +147,18 @@ Tailwind の標準スケール (4px ベース) に乗せる。独自値 (`mt-[13
 | `rounded-full`         | チップ・pill 型ボタン・スコアバー         |
 | `rounded`              | フォーム入力欄                            |
 
-エレベーションは深く積まない。基本は `shadow-sm + border-amber-900/10` の組合せ (新規コードでは `shadow-card + border-border-hairline`)。`--shadow-pop` は意図的に強調したい一点のみ。
+エレベーションは深く積まない。基本は `shadow-sm + border-amber-900/10` の組合せ (新規コードでは `shadow-card + border-border-hairline`)。
+
+### 共有 surface / button utility (`src/index.css`)
+
+2026-05 で新規追加。直書きの組合せより以下のクラスを優先:
+
+| クラス | 用途 | 内訳 |
+| --- | --- | --- |
+| `.surface-card-strong` | 主要カード (form, FortuneResultView, FortuneCard, SummaryCard) | `bg-surface-raised` + `border-border-hairline` + `--shadow-pop` + `border-radius: 1rem` |
+| `.btn-plum` | 主要 CTA (占う、結果を見る、入力をやり直す) | `bg-plum text-text-on-plum` + hover で `color-mix(in oklab, plum 88%, black)` (Safari 旧版 fallback として `filter: brightness(0.9)` を `@supports not (color-mix)` で用意) |
+
+旧 `bg-white/80 backdrop-blur rounded-2xl border-amber-900/10 shadow-sm` / `bg-plum text-paper hover:bg-rose-800` の組合せは新規コードで再利用しない。
 
 ---
 
@@ -197,7 +221,7 @@ Tailwind の標準スケール (4px ベース) に乗せる。独自値 (`mt-[13
 
 - [ ] テキストコントラストは AA (4.5:1 以上)
 - [ ] キーボードで到達でき、`focus-visible` で gold ring が出る
-- [ ] 必要なら `aria-label` `aria-expanded` `aria-controls` `aria-live` を付ける (既存の `<FortuneBlock>` `<TarotCard>` を参考に)
+- [ ] 必要なら `aria-label` `aria-expanded` `aria-controls` `aria-live` を付ける (既存の `<FortuneCard>` `<TarotCard>` を参考に)
 - [ ] アニメは reduced-motion で無効化される
 - [ ] `aria-hidden` を付けるべき装飾要素 (絵文字・帯) を見落としていない
 
@@ -294,7 +318,7 @@ UI 文言は本文と違い**淡い敬体 OK**。長文化を避ける。
 2. `engine.ts` は `(input) => FortuneResult` の純粋関数 (`src/fortunes/types.ts`)
 3. 本文を本ドキュメント §7「声と語法」のルールで書く
 4. `src/fortunes/types.ts` の `FortuneId` と `FORTUNES` カタログにエントリを追加 (id / displayName / traditionalName / description / emoji / accent の 6 つすべて必須)
-5. `src/pages/Home.tsx` に `<FortuneBlock>` を追加 (既存ブロックをコピーすれば自然に reveal アニメに乗る)
+5. `src/pages/Home.tsx` に `<FortuneCard>` を追加 (既存ブロックをコピーすれば自然に reveal アニメに乗る)
 6. **3 か所のハードコード箇所を更新する** (CLAUDE.md にも記載):
    - `src/components/Layout.tsx` のフッター文の件数
    - `src/pages/Home.tsx` のフォーム見出し「7つの占いを、…」

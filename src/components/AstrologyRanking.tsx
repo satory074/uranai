@@ -18,7 +18,7 @@ export function AstrologyRanking({ ranking, natalAlias, selectedAlias, onSelect 
       <p className="text-xs text-plum/80 mb-2 leading-relaxed">
         今日の 12 星座ランキング（タップで他の星座の結果も見られます）
       </p>
-      <ol className="grid grid-cols-6 sm:grid-cols-12 gap-1">
+      <ol className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
         {ranking.map(({ sign, total, rank }) => {
           const isNatal = sign.alias === natalAlias;
           const isSelected = sign.alias === selectedAlias;
@@ -31,10 +31,10 @@ export function AstrologyRanking({ ranking, natalAlias, selectedAlias, onSelect 
                 aria-label={`${rank}位 ${sign.name} 合計${total}/20${isNatal ? ' (あなたの星座)' : ''}`}
                 title={`${rank}位 ${sign.name} ${total}/20`}
                 className={
-                  'flex flex-col items-center justify-center gap-0 rounded-md border px-1 py-1.5 text-center transition cursor-pointer ' +
+                  'flex flex-col items-center justify-center gap-0 rounded-lg border px-1 py-2 text-center transition cursor-pointer ' +
                   (isSelected
-                    ? 'border-plum bg-plum text-paper shadow-sm'
-                    : 'border-amber-900/15 bg-paper text-ink hover:bg-mist')
+                    ? 'border-plum bg-plum text-paper shadow-pop ring-2 ring-plum/20'
+                    : 'border-border-hairline bg-paper text-ink hover:bg-mist hover:border-border-default')
                 }
               >
                 <span className={`text-[10px] leading-none ${isSelected ? 'text-paper/80' : 'text-plum/70'}`}>

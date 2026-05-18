@@ -82,6 +82,60 @@ body {
   100% { transform: translateX(220%)  skewX(-20deg); opacity: 0; }
 }
 
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+
+@layer components {
+  .type-display {
+    font-family: var(--font-serif);
+    font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+  .type-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(1.5rem, 2vw + 0.5rem, 2rem);
+    line-height: 1.2;
+  }
+  .type-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-plum);
+  }
+  .type-chip {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+  }
+  .surface-card-strong {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-hairline);
+    box-shadow: var(--shadow-pop);
+    border-radius: 1rem;
+  }
+  .btn-plum {
+    background: var(--color-plum);
+    color: var(--color-text-on-plum);
+    transition: background-color 200ms var(--ease-emphasized), filter 200ms var(--ease-emphasized), transform 120ms var(--ease-emphasized);
+  }
+  .btn-plum:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-plum) 88%, black);
+  }
+  @supports not (background: color-mix(in oklab, red, blue)) {
+    .btn-plum:hover:not(:disabled) {
+      filter: brightness(0.9);
+    }
+  }
+}
+
+.float-soft {
+  animation: float-soft 6s var(--ease-emphasized) infinite;
+}
+
 .reveal-block {
   animation: reveal-block 720ms var(--ease-overshoot) both;
   transform-origin: center top;
@@ -175,7 +229,8 @@ body {
   .reveal-block,
   .reveal-child,
   .card-flipper[data-flipped="true"],
-  .reveal-button:active:not(:disabled)::before {
+  .reveal-button:active:not(:disabled)::before,
+  .float-soft {
     animation: none !important;
   }
   .card-scene {

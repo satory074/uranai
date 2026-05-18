@@ -67,19 +67,25 @@ type FortuneResult = {
 
 `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
 
+各占いブロックは `<FortuneCard>` (`src/components/FortuneCard.tsx`) でラップされる。これは旧 `<FortuneBlock>` (Home.tsx 内ローカル) を 2026-05 のデザイン磨き込みで独立コンポーネントへ切り出したもの。`<FortuneCard>` は「閉じた本」のメタファで:
+- 外枠は `.surface-card-strong` (opaque white + `--color-border-hairline` + `--shadow-pop`)
+- accent gradient はカードの**左帯** (`w-1.5 bg-gradient-to-b ${info.accent}`)。旧実装の `h-1.5` 上帯は廃止。
+- emoji は丸プレート (`w-12 h-12 rounded-full bg-surface-sunken`) でアンカー化
+- 「結果を見る」は `.btn-plum` filled primary、「占いについて」は hairline-border secondary
+
 The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`), but the engine itself folds in `todayIsoDate()` (`tarot/engine.ts:15`) so cards rotate daily like omikuji and astrology — same person × same day → same 3 枚 (consistent within the day so `tarotFlipped` state stays meaningful), but a different day yields a new draw. About-panel copy in `methodInfo.ts` (`'tarot-three'` entry) reflects this; if the seed structure changes, the `inputUsed` / `howItWorks` / `whenItChanges` fields must be updated together.
 
-Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。
+Each `<FortuneCard>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。
 
 姓名は任意。両方が空のときは姓名判断 (`seimei`) をスキップする。おみくじとタロットは姓名が空でも引ける ── タロットは生年月日をシードに、おみくじは今日の日付 (姓名なしの場合は `name='guest'` フォールバック) をシードに描画する。
 
-To add or modify a fortune: edit the engine + data, add a `<FortuneBlock>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts`. Every catalog entry needs `displayName` / `traditionalName` (subtitle) / `description` (1〜2 文の説明、折りたたみ時も常時表示される) / `emoji` / `accent` — all five are load-bearing in `FortuneBlock`'s header. The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
+To add or modify a fortune: edit the engine + data, add a `<FortuneCard>` section to `Home.tsx`, and add an entry to the `FORTUNES` catalog in `src/fortunes/types.ts`. Every catalog entry needs `displayName` / `traditionalName` (subtitle) / `description` (1〜2 文の説明、折りたたみ時も常時表示される) / `emoji` / `accent` — all five are load-bearing in `FortuneCard`'s header. The `FortuneInfo` type no longer carries a `path` — there are no per-fortune routes.
 
 ### Result presentation layer
 
 - `src/components/resultDerive.ts` derives the keyword chips shown above each result title (`deriveHeadline`) from the existing `FortuneResult` fields. Engines return unchanged shapes; presentation choices live entirely in this helper.
 - **セクションごとの ⭐ 5 段階評価**: `FortuneSection` の optional `rating?: number` (1〜5) が設定されていると、`SectionCard` の title 行に `<RatingStars>` (`FortuneResultView.tsx` 内ローカル) が `⭐️…☆… (N/5)` 形式で描画される。`aria-label="5段階中N"` 付き。値は engine 側で `pickWeighted(rng, RATING_WEIGHTS)` で決定論的に抽選。現状 astrology の 4 セクションだけで使用。タロットの `sectionPrefix` (左挿しカード) と層が分かれているため共存可能。
-- `<FortuneBlock>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
+- `<FortuneCard>` のヘッダーは折りたたみ時も常時表示で、`emoji + displayName + traditionalName(小)` の見出し行の直下に `info.description` の段落 (`text-xs md:text-sm text-ink/70 ml-11`) を出して「これは何の占いか」を伝える。`{expanded && …}` の **外側**に置いてあるので折りたたみ・展開どちらでも見える。
 - **ラッキーカラーには色見本を出す**: `<FortuneResultView>` の `Highlight` と `<NarrativeCard>` の `MiniHighlight` は `label === 'ラッキーカラー'` の枠だけ `<ColorSwatch name={value} />` (`src/components/ColorSwatch.tsx`) を文字の左に並べる。和色名 → hex のマップは `src/lib/japaneseColors.ts` (`JAPANESE_COLORS` + `resolveColor`)。複合色 (`'白・銀'` 等) は `・` で分割して半々のグラデーション円を描く。マップに無い名前は swatch 非表示で文字だけ残る (壊さない設計)。新しい色を data 側で増やしたら `JAPANESE_COLORS` に追記する。
 - `FortuneResultView` の `sectionPrefix?: (index: number) => ReactNode` は各セクションの**左 (md+) / 上 (sm)** に挿し込まれる視覚要素のスロット。タロットでは `<TarotCard />` を返している。新しい占いに視覚要素を足すならここを使う。
 - **タロットの `<TarotCard />` は controlled component**: 自身が `<button>` で、`flipped: boolean` + `onFlip?: () => void` を props で受け取る。`flipped` のソース・オブ・トゥルースは `Home.tsx` の `tarotFlipped: [boolean, boolean, boolean]` state。クリックで `onFlip` → Home が state 更新 → 再描画で `flipped=true` が降りてめくれる (`disabled={flipped}` で再クリック不可)。`Home.tsx` の `TAROT_POSITIONS = ['過去','現在','未来'] as const` を `position` prop に渡す。
@@ -94,14 +100,14 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 
 - **`dailyRanking()`** (`src/fortunes/astrology/engine.ts`): `SIGNS` の 12 星座すべてに対して `readSunSign(_, { signOverride })` を擬似実行 → `sections[].rating` (1〜5) の合計 (4〜20) で降順ソート → `RankingEntry[]` (`{ sign, total, rank }`) を返す。同点は `SIGNS` の宣言順 (= 牡羊 → 魚) で先勝ち。
 - **`<AstrologyRanking>`** (`src/components/AstrologyRanking.tsx`): 12 セルの button グリッド (sm 以上で 12 列、モバイルは 6 列 × 2 行)。各セル: 順位・symbol・略称・合計 (N/20)・★ (natal sign)。選択中は plum 背景でハイライト。`aria-pressed` 付き。
-- **配置**: `Home.tsx` 内、`<FortuneBlock id="fortune-astrology">` の直下、`<FortuneResultView>` の手前に常時表示。
+- **配置**: `Home.tsx` 内、`<FortuneCard id="fortune-astrology">` の直下、`<FortuneResultView>` の手前に常時表示。
 - **state**: `Home.tsx` の `astroSelectedAlias: string | null`。タップで `setAstroSelectedAlias(alias)`、natal 星座を再タップすると `null` に戻して override 解除。フォーム再 submit でも `null` リセット (他の state リセット群と並べて `onSubmit` ハンドラ内で実行)。
 - **`signOverride` の挙動**: `readSunSign` の第 2 引数で `{ signOverride: Sign }` を渡すと、その星座の今日の運勢を計算する。指定時は subtitle から「`${year}年${month}月${day}日生まれ`」の prefix が消える (本来の星座と異なる星座を覗いている文脈なので、生年月日表示は混乱を招くため)。
 - **seed の独立性**: 各星座の rating は `astrology|${sign.alias}|${moonName}|${todayIso}` を seed にして決定論的に算出されるので、ランキングと結果表示は常に整合する。
 
 ### About panels (占いの方法 + 要素一覧)
 
-各 `<FortuneBlock>` には「占いについて」トグルがあり、押すと `<FortuneAboutPanel id={fortuneId} />` (`src/components/FortuneAboutPanel.tsx`) が結果の上に展開される。中身は 2 セクション:
+各 `<FortuneCard>` には「占いについて」トグルがあり、押すと `<FortuneAboutPanel id={fortuneId} />` (`src/components/FortuneAboutPanel.tsx`) が結果の上に展開される。中身は 2 セクション:
 
 1. **占いの背景** — 6 フィールド (`origin` / `inputUsed` / `howItWorks` / `simplified` / `ourTake` / `whenItChanges`) を順に表示。テキストは `src/fortunes/methodInfo.ts` の `METHOD_INFO: Record<FortuneId, MethodInfo>` に集約。書き下ろしオリジナル文のみで、流派名・占い師名・「〇〇式」・算命学十大主星名は使わない (著作権ガード — `methodInfo.ts` が単一ファイルなので diff レビューが容易)。最後の `whenItChanges` は「同じ人がもう一度占うと？」というラベルで、占いごとに「結果が変わる条件」を固有の表現で説明する。日替わりグループ (`omikuji` / `tarot-three` / `astrology`) は「日付が変わると新しい結果」、生年月日固定グループ (`seimei` / `kyusei` / `shichu` / `sanmei`) は「同じ入力なら一生同じ」と書き分ける。
 2. **ぜんぶの要素** — 占いごとに見た目が違うため、占い別カタログコンポーネントに分離 (`src/components/elementCatalogs/`):
@@ -120,7 +126,7 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 「結果を見る」を押した瞬間の演出は **CSS アニメーションのみ**で実装している (motion/framer-motion は導入していない)。トークンとキーフレームは `src/index.css` に集約:
 
 - `@theme` の `--ease-emphasized / --ease-overshoot / --ease-anticipate / --dur-windup / --dur-flip / --dur-settle / --reveal-stagger` がチューニング窓口。
-- `.reveal-block` — `<FortuneBlock>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
+- `.reveal-block` — `<FortuneCard>` が展開された時に中身全体に乗せる fade-up + overshoot scale (Home.tsx)。
 - `.reveal-child` — `FortuneResultView` 内の主要セクション (header / summary / lucky / sections / details) に乗せ、`style={{ '--reveal-i': i }}` でインデックスを渡してスタガーする (CSSProperties キャストが必要)。
 - `.card-scene` / `.card-flipper` / `.card-orient` — `TarotCard` の 3D フリップは **クリック起点の state 駆動**。マウント直後に走る自動アニメ (旧 `card-wobble` / `orient-upright` / `orient-reversed`) は撤去済み:
   - `.card-scene` (`<button>`) はホバー/フォーカス時に `translateY(-3px)` + 軽い `drop-shadow` を出してクリック誘導する。`:disabled` (= めくり済み) ではポインタも昇降も止める。
@@ -129,7 +135,7 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 - `.reveal-button` — `Home.tsx` の「結果を見る/閉じる」ボタンに付く wind-up。`:active` 中だけ scale 0.96 + 金色シマー (`shimmer-sweep` キーフレーム + `::before`) が走る。
 - `@media (prefers-reduced-motion: reduce)` では `card-flip` を含む全アニメを `animation: none !important` にし、`.card-flipper[data-flipped="true"]` だけ `transform: rotateY(180deg)` 直結で前面静止 (= クリックすると瞬時に表向きになる)。`.card-orient[data-reversed="true"]` の rotateZ(180°) は静的なのでそのまま効き、逆位置カードは reduced-motion でも上下逆さまで現れる。`.card-scene` のホバー昇降も殺す。
 
-新しい占いを足す時は、追加の `reveal-child` ラベルや stagger 番号は不要 — `FortuneBlock` の `.reveal-block` が自動で全体を包むので、子要素が `FortuneResultView` 経由なら既存スタガーに自然に乗る。
+新しい占いを足す時は、追加の `reveal-child` ラベルや stagger 番号は不要 — `FortuneCard` の `.reveal-block` が自動で全体を包むので、子要素が `FortuneResultView` 経由なら既存スタガーに自然に乗る。
 
 ### Other component caveats
 

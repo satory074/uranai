@@ -19,15 +19,15 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
   return (
     <article
       id={id}
-      className="bg-white/80 backdrop-blur rounded-2xl border border-amber-900/10 shadow-sm p-6 md:p-8 my-6"
+      className="surface-card-strong p-6 md:p-8 my-4 md:my-5"
     >
-      <header className="reveal-child border-b border-amber-900/10 pb-4 mb-5" style={stagger(0)}>
+      <header className="reveal-child border-b border-border-hairline pb-4 mb-5" style={stagger(0)}>
         {chips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {chips.map((c) => (
               <span
                 key={c}
-                className="inline-block px-2.5 py-0.5 rounded-full bg-mist text-plum text-xs font-medium tracking-wide"
+                className="inline-block px-3 py-1 rounded-full bg-surface-sunken text-plum text-xs font-medium tracking-wide border border-border-hairline"
               >
                 {c}
               </span>
@@ -43,15 +43,15 @@ export function FortuneResultView({ result, id, headline, sectionPrefix }: Props
           <p className="text-xs text-ink/55 mt-1.5">{result.subtitle}</p>
         )}
         {typeof result.score === 'number' && (
-          <div className="mt-3 flex items-center gap-3">
-            <div className="text-xs text-ink/60">総合スコア</div>
-            <div className="flex-1 max-w-[200px] h-2 rounded-full bg-mist overflow-hidden">
+          <div className="mt-4 flex items-center gap-3">
+            <div className="text-xs text-ink/60 shrink-0">総合スコア</div>
+            <div className="flex-1 max-w-[200px] h-3 rounded-full bg-surface-sunken overflow-hidden border border-border-hairline">
               <div
                 className="h-full bg-gradient-to-r from-amber-400 to-rose-400"
                 style={{ width: `${result.score}%` }}
               />
             </div>
-            <div className="font-serif text-lg text-plum">{result.score}</div>
+            <div className="font-serif text-xl text-plum tabular-nums">{result.score}</div>
           </div>
         )}
       </header>
@@ -127,7 +127,7 @@ function SectionCard({
   );
 
   return (
-    <section className="rounded-lg bg-mist/40 border border-amber-900/5 p-4">
+    <section className="rounded-xl bg-surface-sunken border border-border-hairline p-4 md:p-5">
       {prefix ? (
         <div className="md:grid md:grid-cols-[auto_1fr] md:gap-5 md:items-start">
           <div className="flex justify-center md:justify-start mb-3 md:mb-0">{prefix}</div>
@@ -167,8 +167,8 @@ function Highlight({
   swatch?: 'sm' | 'md';
 }): ReactNode {
   return (
-    <div className="rounded-lg bg-paper border border-amber-900/15 px-4 py-3">
-      <div className="text-[10px] tracking-widest text-plum/70 mb-1 uppercase">{label}</div>
+    <div className="rounded-xl bg-paper border border-border-hairline px-4 py-3 shadow-card">
+      <div className="text-[10px] tracking-widest text-plum/80 mb-1.5 uppercase">{label}</div>
       <div className="flex items-center gap-2 text-sm font-medium text-ink leading-snug">
         {swatch && <ColorSwatch name={value} size={swatch} />}
         <span>{value}</span>
