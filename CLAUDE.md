@@ -63,7 +63,7 @@ type FortuneResult = {
 
 `Home.tsx` calls each engine in order and renders each result through `FortuneResultView`. For tarot-three, each `<TarotCard />` is passed via `FortuneResultView`'s `sectionPrefix` prop so each row pairs one card with its 過去/現在/未来 interpretation.
 
-The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`) so the same person sees the same cards on every visit.
+The seedHint passed to `drawThree` is derived from the user's input (`${year}-${month}-${day}|${sei}${mei}`), but the engine itself folds in `todayIsoDate()` (`tarot/engine.ts:15`) so cards rotate daily like omikuji and astrology — same person × same day → same 3 枚 (consistent within the day so `tarotFlipped` state stays meaningful), but a different day yields a new draw. About-panel copy in `methodInfo.ts` (`'tarot-three'` entry) reflects this; if the seed structure changes, the `inputUsed` / `howItWorks` / `whenItChanges` fields must be updated together.
 
 Each `<FortuneBlock>` のヘッダーには **2 つのトグルボタン** が並ぶ: 左に「占いについて」(占い解説 + 要素一覧パネル)、右に「結果を見る」(占いの結果)。両者は完全に独立した state で、開閉の順序は問わない。両方開いた場合は **about パネルが結果の上**に表示される。Per-block visibility は Home.tsx の `expanded` (結果) と `aboutExpanded` (解説) の 2 つに分かれ、どちらもフォーム再 submit 時に `{}` リセットされる。
 

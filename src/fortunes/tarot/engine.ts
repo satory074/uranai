@@ -12,7 +12,7 @@ export type DrawOptions = {
 };
 
 export function drawThree(opts: DrawOptions = {}): { drawn: DrawnCard[]; result: FortuneResult } {
-  const seed = `tarot3|${opts.seedHint ?? `${todayIsoDate()}|${Date.now()}|${Math.random()}`}`;
+  const seed = `tarot3|${todayIsoDate()}|${opts.seedHint ?? `${Date.now()}|${Math.random()}`}`;
   const rng = createRng(seed);
   const picked = shuffle(rng, MAJOR_ARCANA).slice(0, 3);
   const drawn: DrawnCard[] = picked.map((card) => ({ card, reversed: rng() < 0.5 }));
@@ -34,6 +34,7 @@ export function drawThree(opts: DrawOptions = {}): { drawn: DrawnCard[]; result:
       summary: '3枚のカードがそれぞれの時間軸からのメッセージを伝えています。一枚ずつ、じっくり受け取ってみてください。',
       sections,
       meta: {
+        日付: todayIsoDate(),
         過去: `${drawn[0].card.name}（${drawn[0].reversed ? '逆位置' : '正位置'}）`,
         現在: `${drawn[1].card.name}（${drawn[1].reversed ? '逆位置' : '正位置'}）`,
         未来: `${drawn[2].card.name}（${drawn[2].reversed ? '逆位置' : '正位置'}）`,
