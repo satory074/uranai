@@ -44,6 +44,14 @@ export function Layout() {
           </div>
           <div className="pt-4 border-t border-border-hairline text-[11px] text-ink/55 flex flex-wrap items-baseline justify-between gap-2">
             <span>© うらない百貨</span>
+            <a
+              href="https://satory074.com/apps/"
+              target="_blank"
+              rel="noopener"
+              className="hover:text-ink transition"
+            >
+              アプリ一覧へ
+            </a>
             <span>全 {FORTUNES.length} 種類の占い</span>
           </div>
         </div>
