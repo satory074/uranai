@@ -248,3 +248,8 @@ body {
     transform: rotateY(180deg);
   }
 }
+
+/* 固定バックリンクバーがページ内アンカーの飛び先を隠さないように */
+html {
+  scroll-padding-bottom: calc(48px + env(safe-area-inset-bottom));
+}

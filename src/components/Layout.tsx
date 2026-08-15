@@ -61,7 +61,7 @@ export function Layout() {
             target="_blank"
             rel="noopener"
             aria-label="satory074 のほかのアプリ一覧を新しいタブで開く"
-            className="inline-flex items-center gap-1 text-xs text-ink/70 transition-colors hover:text-plum"
+            className="inline-flex h-full items-center gap-1 px-3 text-xs text-ink/70 transition-colors hover:text-plum"
           >
             satory074 のほかのアプリ <span aria-hidden="true">↗</span>
           </a>
