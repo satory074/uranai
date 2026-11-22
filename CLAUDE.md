@@ -16,11 +16,11 @@ npm run lint     # ESLint flat config (eslint.config.js)
 
 There are no automated tests. Verify changes by running `npm run build` + `npm run seo-check`, then exercising each affected fortune via the unified Home form in the browser.
 
-Node 20.x (`.github/workflows/deploy.yml` の `actions/setup-node` 指定が真実の所在；`package.json` に `engines` 指定はない)。
+Node 22.x (`.github/workflows/deploy.yml` の `actions/setup-node` 指定が真実の所在；`package.json` に `engines` 指定はない)。
 
 ## Deploy pipeline
 
-Pushing to `main` triggers `.github/workflows/deploy.yml` (build → seo-check → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`) and publishes to https://satory074.github.io/uranai/. ブランチへの push では deploy は走らない (`on.push.branches: [main]` と `workflow_dispatch` のみ)。
+Pushing to `main` triggers `.github/workflows/deploy.yml` (build → seo-check → `actions/upload-pages-artifact@v5` → `actions/deploy-pages@v5`) and publishes to https://satory074.github.io/uranai/. ブランチへの push では deploy は走らない (`on.push.branches: [main]` と `workflow_dispatch` のみ)。
 
 - `vite.config.ts` has `base: '/uranai/'` — if the repo is renamed, update both the `base` and the production URL together.
 - HashRouter is intentional — it sidesteps the GitHub Pages SPA-refresh-404 problem entirely. Do not switch to BrowserRouter without also adding a 404.html fallback.
