@@ -152,6 +152,8 @@ export function Home() {
             </ul>
           </div>
         </form>
+
+        <FortuneOverview />
       </div>
     );
   }
@@ -418,6 +420,40 @@ function StepLabel({
       {required && <span className="text-plum text-sm" aria-label="必須">*</span>}
       {optional && <span className="text-xs text-ink/55">（任意）</span>}
     </div>
+  );
+}
+
+// 入力前の画面の下に出す「N つの占いについて」。文章は FORTUNES の description
+// (結果画面の各カードの見出し下と同じ文) をそのまま使い、ここで新しい説明は書かない。
+// ビルド時に事前描画されるので、JS を実行しないクローラーにもこの一覧が読める。
+function FortuneOverview() {
+  return (
+    <section aria-labelledby="fortune-overview-title" className="mt-12 md:mt-16">
+      <p className="type-eyebrow mb-2">ABOUT</p>
+      <h2
+        id="fortune-overview-title"
+        className="font-serif text-xl md:text-2xl text-ink leading-tight mb-5"
+      >
+        {FORTUNES.length}つの占いについて
+      </h2>
+      <ul className="surface-card-strong px-5 md:px-8 divide-y divide-border-hairline">
+        {FORTUNES.map((f) => (
+          <li key={f.id} className="flex gap-3 md:gap-4 py-5">
+            <span
+              className="w-10 h-10 rounded-full bg-surface-sunken flex items-center justify-center text-xl shrink-0 border border-border-hairline"
+              aria-hidden
+            >
+              {f.emoji}
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-serif text-lg text-ink leading-tight">{f.displayName}</h3>
+              <p className="text-[11px] text-ink/55 mt-1 tracking-[0.15em]">{f.traditionalName}</p>
+              <p className="text-sm text-ink/75 leading-relaxed mt-2">{f.description}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

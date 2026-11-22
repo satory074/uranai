@@ -25,6 +25,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build
+      # 検索・AI クローラーに読める形か (title / canonical / sitemap / JSON-LD / 戻るバー) を確かめ、破っていたら deploy しない
+      - run: node scripts/seo-check.mjs dist https://satory074.github.io/uranai/ --require-backlink
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist

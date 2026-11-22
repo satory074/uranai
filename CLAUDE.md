@@ -8,25 +8,37 @@ For the consolidated design language (color tokens, typography, motion, voice & 
 
 ```bash
 npm run dev      # http://localhost:5173/uranai/  (basePath is /uranai/, not /)
-npm run build    # tsc -b && vite build — TypeScript strict, must be 0 errors
+npm run build    # tsc -b → vite build → vite build --ssr (dist-ssr/) → scripts/prerender.mjs — TypeScript strict, must be 0 errors
+npm run seo-check  # dist/ が検索・AI クローラーに読める形か (scripts/seo-check.mjs、deploy でも同じ検査)
 npm run preview  # Serve dist/ locally to validate the production bundle
 npm run lint     # ESLint flat config (eslint.config.js)
 ```
 
-There are no automated tests. Verify changes by running `npm run build`, then exercising each affected fortune via the unified Home form in the browser.
+There are no automated tests. Verify changes by running `npm run build` + `npm run seo-check`, then exercising each affected fortune via the unified Home form in the browser.
 
 Node 20.x (`.github/workflows/deploy.yml` の `actions/setup-node` 指定が真実の所在；`package.json` に `engines` 指定はない)。
 
 ## Deploy pipeline
 
-Pushing to `main` triggers `.github/workflows/deploy.yml` (build → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`) and publishes to https://satory074.github.io/uranai/.
+Pushing to `main` triggers `.github/workflows/deploy.yml` (build → seo-check → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`) and publishes to https://satory074.github.io/uranai/. ブランチへの push では deploy は走らない (`on.push.branches: [main]` と `workflow_dispatch` のみ)。
 
 - `vite.config.ts` has `base: '/uranai/'` — if the repo is renamed, update both the `base` and the production URL together.
 - HashRouter is intentional — it sidesteps the GitHub Pages SPA-refresh-404 problem entirely. Do not switch to BrowserRouter without also adding a 404.html fallback.
 
+### 事前描画と SEO (2026-11)
+
+GPTBot / ClaudeBot などは JS を実行しないので、配信する `dist/index.html` に入力前のホーム画面を HTML として入れている。占いの結果は日付・入力ごとに変わるので**索引させず、ページも作らない** (URL は `https://satory074.github.io/uranai/` の 1 つだけ)。
+
+- ルートの組み立ては `src/AppRoutes.tsx` の 1 か所。ブラウザは `src/main.tsx` (`HashRouter`)、ビルド時は `src/entry-server.tsx` (`StaticRouter`、`basename` = `import.meta.env.BASE_URL` で末尾 `/` を残す。外すとロゴのリンクが `/uranai` になり 301) が同じものを描く
+- `scripts/prerender.mjs` が `dist-ssr/entry-server.js` の `render()` (`renderToStaticMarkup`) の結果を `dist/index.html` の `<div id="root"><!--app-html--></div>` に差し込む。目印が無い・`app-backlink-bar` が無いときはビルドを落とす
+- **クライアントは `createRoot` (hydrate しない)**。入力欄の既定の年月日は `new Date()` から決まり、ビルドした日と見ている日で違うので、事前描画は JS が動くまでの見本として丸ごと置き換える。中身は同じ部品なので、置き換わっても位置はずれない (2026-11 にブラウザで主要要素の位置が一致することを確認)。置き換わるまで (JS 約 590KB / gzip 約 200KB の読み込み中) に入力欄へ打った値は消える
+- ⚠️ `Layout` と Home の**入力前の画面**は Node でも描かれるので、描画中に `window` / `document` / `localStorage` を触らない (触るなら `useEffect` の中)。結果画面 (送信後) はブラウザでしか描かれない
+- 入力前の画面の下に「N つの占いについて」(Home.tsx 末尾の `FortuneOverview`) がある。文は `FORTUNES` の `description` をそのまま使い、新しい説明文は書かない
+- `index.html` に canonical と JSON-LD (`WebSite`、author は `https://satory074.com/#person`)、`public/sitemap.xml` (1 URL)。検査は `scripts/seo-check.mjs` (原本は basecamp リポジトリ。中身は変えずにコピーする)。deploy workflow のビルド直後に `node scripts/seo-check.mjs dist https://satory074.github.io/uranai/ --require-backlink` があり、破ると deploy しない
+
 ## Architecture
 
-The entire app is a **single page**. `src/pages/Home.tsx` collects 生年月日 (必須) と 姓名 (任意) in one form, then renders results from all 7 fortunes inline. Routing is degenerate — only the `/` index route exists in `src/main.tsx`. HashRouter is kept in case a user reloads on a stale hash URL like `/#/astrology` from a pre-refactor bookmark.
+The entire app is a **single page**. `src/pages/Home.tsx` collects 生年月日 (必須) と 姓名 (任意) in one form, then renders results from all 7 fortunes inline. Routing is degenerate — only the `/` index route exists in `src/AppRoutes.tsx`. HashRouter is kept in case a user reloads on a stale hash URL like `/#/astrology` from a pre-refactor bookmark.
 
 `src/pages/` contains only `Home.tsx`. Older per-fortune pages were merged into Home and removed. **`README.md` is stale** — it still lists 8 fortunes (including the removed `tarot-one`), shows per-fortune `pages/` files, and references a non-existent `PageHero` component. Treat CLAUDE.md as the source of truth and do not sync edits back to README without rewriting it.
 
@@ -157,9 +169,9 @@ astrology だけが持つ「12 星座ランキング兼サインピッカー」�
 - `src/components/DateInput.tsx` and `src/components/NameInput.tsx` are **currently unused** — `Home.tsx` builds its combined form inline. Files remain in the tree; do not import them by mistake.
 - 占いの **件数 (数字)** は 2 か所にハードコードされており、占いを増減した際は `FORTUNES` カタログ (`src/fortunes/types.ts`) と合わせて手動更新する必要がある:
   1. `src/pages/Home.tsx` の入力フォーム見出し (「7つの占いを、ひと所で。」) — 数字も文言も手動。
-  2. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」) — 同上、手動。
+  2. `index.html` の `<title>` (「うらない百貨 — 7種類の占いを楽しむ」) — 同上、手動。同じ文言が `og:title` / `og:image:alt` / `twitter:title` にもある。
 
-  なお `src/components/Layout.tsx` のフッターと Home.tsx のフォーム末尾「結果に並ぶ占い」chip list、フッター末尾「全 N 種類の占い」表記はすべて `FORTUNES.map` / `FORTUNES.length` で**自動追従**するので手動更新不要。
+  なお `src/components/Layout.tsx` のフッターと Home.tsx のフォーム末尾「結果に並ぶ占い」chip list、フッター末尾「全 N 種類の占い」表記、入力前の画面の「N つの占いについて」(`FortuneOverview`) はすべて `FORTUNES.map` / `FORTUNES.length` で**自動追従**するので手動更新不要。
 
 ### Shared utilities (`src/lib/`)
 
