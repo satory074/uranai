@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { StaticRouter } from 'react-router';
 import { AppRoutes } from './AppRoutes';
+import { PrerenderContext } from './prerenderContext';
 
 export function render(): string {
   // BASE_URL は vite.config.ts の base ('/uranai/')。ロゴのリンクが公開 URL のトップ (末尾 / 付き) を
@@ -12,9 +13,11 @@ export function render(): string {
   const base = import.meta.env.BASE_URL;
   return renderToStaticMarkup(
     <StrictMode>
-      <StaticRouter location={base} basename={base}>
-        <AppRoutes />
-      </StaticRouter>
+      <PrerenderContext value={true}>
+        <StaticRouter location={base} basename={base}>
+          <AppRoutes />
+        </StaticRouter>
+      </PrerenderContext>
     </StrictMode>,
   );
 }

@@ -31,7 +31,8 @@ GPTBot / ClaudeBot などは JS を実行しないので、配信する `dist/in
 
 - ルートの組み立ては `src/AppRoutes.tsx` の 1 か所。ブラウザは `src/main.tsx` (`HashRouter`)、ビルド時は `src/entry-server.tsx` (`StaticRouter`、`basename` = `import.meta.env.BASE_URL` で末尾 `/` を残す。外すとロゴのリンクが `/uranai` になり 301) が同じものを描く
 - `scripts/prerender.mjs` が `dist-ssr/entry-server.js` の `render()` (`renderToStaticMarkup`) の結果を `dist/index.html` の `<div id="root"><!--app-html--></div>` に差し込む。目印が無い・`app-backlink-bar` が無いときはビルドを落とす
-- **クライアントは `createRoot` (hydrate しない)**。入力欄の既定の年月日は `new Date()` から決まり、ビルドした日と見ている日で違うので、事前描画は JS が動くまでの見本として丸ごと置き換える。中身は同じ部品なので、置き換わっても位置はずれない (2026-11 にブラウザで主要要素の位置が一致することを確認)。置き換わるまで (JS 約 590KB / gzip 約 200KB の読み込み中) に入力欄へ打った値は消える
+- **クライアントは `createRoot` (hydrate しない)**。入力欄の既定の年月日は `new Date()` から決まり、ビルドした日と見ている日で違うので、事前描画は JS が動くまでの見本として丸ごと置き換える。中身は同じ部品なので、置き換わっても位置はずれない (2026-11 にブラウザで主要要素の位置が一致することを確認)
+- 置き換わるまで (JS 約 590KB / gzip 約 200KB の読み込み中) に打った値は描き直しで消えるので、**事前描画では入力欄 5 つと「占う」ボタンを `disabled`、フォームを `aria-busy="true"` にしている**。切り替えは `src/prerenderContext.ts` の `PrerenderContext` (entry-server.tsx だけが `true` を渡す)。ブラウザの描画では従来どおり操作できる。入力前の画面に操作部品を足すときは同じく `disabled={prerendered}` を付ける
 - ⚠️ `Layout` と Home の**入力前の画面**は Node でも描かれるので、描画中に `window` / `document` / `localStorage` を触らない (触るなら `useEffect` の中)。結果画面 (送信後) はブラウザでしか描かれない
 - 入力前の画面の下に「N つの占いについて」(Home.tsx 末尾の `FortuneOverview`) がある。文は `FORTUNES` の `description` をそのまま使い、新しい説明文は書かない
 - `index.html` に canonical と JSON-LD (`WebSite`、author は `https://satory074.com/#person`)、`public/sitemap.xml` (1 URL)。検査は `scripts/seo-check.mjs` (原本は basecamp リポジトリ。中身は変えずにコピーする)。deploy workflow のビルド直後に `node scripts/seo-check.mjs dist https://satory074.github.io/uranai/ --require-backlink` があり、破ると deploy しない
