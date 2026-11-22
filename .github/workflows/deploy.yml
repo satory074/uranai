@@ -18,14 +18,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: 22
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      # 検索・AI クローラーに読める形か (title / canonical / sitemap / JSON-LD / 戻るバー) を確かめ、破っていたら deploy しない
+      - run: node scripts/seo-check.mjs dist https://satory074.github.io/uranai/ --require-backlink
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
 
@@ -37,4 +39,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

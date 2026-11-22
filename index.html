@@ -6,6 +6,7 @@
     <meta name="description" content="おみくじ・タロット・姓名判断・西洋占星術・九星気学などをまとめて楽しめる、無料の占いウェブサイト。" />
     <meta name="theme-color" content="#fdfaf3" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="canonical" href="https://satory074.github.io/uranai/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:url" content="https://satory074.github.io/uranai/" />
@@ -22,9 +23,27 @@
     <meta name="twitter:description" content="おみくじ・タロット・姓名判断・西洋占星術・九星気学などをまとめて楽しめる、無料の占いウェブサイト。" />
     <meta name="twitter:image" content="https://satory074.github.io/uranai/og-image.png" />
     <title>うらない百貨 — 7種類の占いを楽しむ</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://satory074.github.io/uranai/#website",
+        "name": "うらない百貨",
+        "url": "https://satory074.github.io/uranai/",
+        "description": "おみくじ・タロット・姓名判断・西洋占星術・九星気学などをまとめて楽しめる、無料の占いウェブサイト。",
+        "inLanguage": "ja",
+        "author": {
+          "@type": "Person",
+          "@id": "https://satory074.com/#person",
+          "name": "satory074",
+          "url": "https://satory074.com/"
+        }
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- #root の中身はビルド時に scripts/prerender.mjs が入れる (入力前のホーム画面) -->
+    <div id="root"><!--app-html--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

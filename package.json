@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "seo-check": "node scripts/seo-check.mjs dist https://satory074.github.io/uranai/ --require-backlink",
     "lint": "eslint .",
     "preview": "vite preview"
   },

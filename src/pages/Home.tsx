@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
 import { FORTUNES, type FortuneId, type FortuneInfo, type FortuneResult } from '../fortunes/types';
 import { FortuneResultView } from '../components/FortuneResultView';
 import { AstrologyRanking } from '../components/AstrologyRanking';
@@ -7,6 +7,7 @@ import { HeroDecoration } from '../components/HeroDecoration';
 import { SummaryCard } from '../components/SummaryCard';
 import { deriveHeadline } from '../components/resultDerive';
 import { TarotCard } from '../components/TarotCard';
+import { PrerenderContext } from '../prerenderContext';
 import { readSunSign, dailyRanking } from '../fortunes/astrology/engine';
 import { SIGNS, findSign } from '../fortunes/astrology/signs';
 import { readKyusei } from '../fortunes/kyusei/engine';
@@ -23,6 +24,8 @@ const FORTUNE_MAP = Object.fromEntries(
 const TAROT_POSITIONS = ['過去', '現在', '未来'] as const;
 
 export function Home() {
+  // 事前描画 (ビルド時) だけ true。入力欄と送信ボタンを disabled にする (理由は prerenderContext.ts)
+  const prerendered = useContext(PrerenderContext);
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear() - 30);
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -60,6 +63,7 @@ export function Home() {
 
         <form
           className="surface-card-strong p-6 md:p-10"
+          aria-busy={prerendered || undefined}
           onSubmit={(e) => {
             e.preventDefault();
             setTarotFlipped([false, false, false]);
@@ -77,6 +81,7 @@ export function Home() {
                 max="2100"
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
+                disabled={prerendered}
                 className="w-28 md:w-32 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
@@ -87,6 +92,7 @@ export function Home() {
                 max="12"
                 value={month}
                 onChange={(e) => setMonth(Number(e.target.value))}
+                disabled={prerendered}
                 className="w-20 md:w-24 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
@@ -97,6 +103,7 @@ export function Home() {
                 max="31"
                 value={day}
                 onChange={(e) => setDay(Number(e.target.value))}
+                disabled={prerendered}
                 className="w-20 md:w-24 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif tabular-nums focus:border-plum focus:outline-none"
               />
             </Field>
@@ -109,6 +116,7 @@ export function Home() {
                 type="text"
                 value={sei}
                 onChange={(e) => setSei(e.target.value)}
+                disabled={prerendered}
                 placeholder="山田"
                 className="w-32 md:w-36 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif focus:border-plum focus:outline-none"
               />
@@ -118,6 +126,7 @@ export function Home() {
                 type="text"
                 value={mei}
                 onChange={(e) => setMei(e.target.value)}
+                disabled={prerendered}
                 placeholder="花子"
                 className="w-32 md:w-36 h-12 px-4 rounded-lg border border-border-default bg-surface-base text-lg font-serif focus:border-plum focus:outline-none"
               />
@@ -129,6 +138,7 @@ export function Home() {
 
           <button
             type="submit"
+            disabled={prerendered}
             className="reveal-button btn-plum w-full h-14 rounded-2xl font-serif text-lg shadow-card hover:shadow-pop active:scale-[0.98] inline-flex items-center justify-center gap-3 cursor-pointer"
           >
             <span>占う</span>
@@ -152,6 +162,8 @@ export function Home() {
             </ul>
           </div>
         </form>
+
+        <FortuneOverview />
       </div>
     );
   }
@@ -418,6 +430,40 @@ function StepLabel({
       {required && <span className="text-plum text-sm" aria-label="必須">*</span>}
       {optional && <span className="text-xs text-ink/55">（任意）</span>}
     </div>
+  );
+}
+
+// 入力前の画面の下に出す「N つの占いについて」。文章は FORTUNES の description
+// (結果画面の各カードの見出し下と同じ文) をそのまま使い、ここで新しい説明は書かない。
+// ビルド時に事前描画されるので、JS を実行しないクローラーにもこの一覧が読める。
+function FortuneOverview() {
+  return (
+    <section aria-labelledby="fortune-overview-title" className="mt-12 md:mt-16">
+      <p className="type-eyebrow mb-2">ABOUT</p>
+      <h2
+        id="fortune-overview-title"
+        className="font-serif text-xl md:text-2xl text-ink leading-tight mb-5"
+      >
+        {FORTUNES.length}つの占いについて
+      </h2>
+      <ul className="surface-card-strong px-5 md:px-8 divide-y divide-border-hairline">
+        {FORTUNES.map((f) => (
+          <li key={f.id} className="flex gap-3 md:gap-4 py-5">
+            <span
+              className="w-10 h-10 rounded-full bg-surface-sunken flex items-center justify-center text-xl shrink-0 border border-border-hairline"
+              aria-hidden
+            >
+              {f.emoji}
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-serif text-lg text-ink leading-tight">{f.displayName}</h3>
+              <p className="text-[11px] text-ink/55 mt-1 tracking-[0.15em]">{f.traditionalName}</p>
+              <p className="text-sm text-ink/75 leading-relaxed mt-2">{f.description}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
